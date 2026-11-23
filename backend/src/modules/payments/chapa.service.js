@@ -144,6 +144,34 @@ function normalizeEthiopianPhone(value) {
   return null;
 }
 
+function normalizeChapaEmail(value) {
+  const email = String(value ?? "").trim();
+  const match = email.match(/^[^\s@]+@([^\s@]+)$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const domain = match[1].toLowerCase();
+  const reservedDomains = new Set([
+    "example.com",
+    "example.net",
+    "example.org",
+    "localhost",
+  ]);
+
+  if (
+    reservedDomains.has(domain) ||
+    domain.endsWith(".test") ||
+    domain.endsWith(".invalid") ||
+    domain.endsWith(".localhost")
+  ) {
+    return null;
+  }
+
+  return email;
+}
+
 function toMinorAmount(value) {
   const amount = Number(value);
 
@@ -180,7 +208,7 @@ export async function initializeChapaCheckout({
   const firstName = customerName.shift() || "Member";
   const lastName = customerName.join(" ") || "Member";
   const customerPhone = normalizeEthiopianPhone(customer.phone);
-  const customerEmail = String(customer.email ?? "").trim();
+  const customerEmail = normalizeChapaEmail(customer.email);
 
   const payload = {
     amount: (amountMinor / 100).toFixed(2),

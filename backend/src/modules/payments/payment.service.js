@@ -304,14 +304,41 @@ export async function initializeOnlineContribution(
     };
   }
 
-  const checkout = await initializeChapaCheckout({
-    attempt: extractAttempt(attempt),
-    customer: {
-      full_name: attempt.full_name,
-      phone: attempt.phone,
-      email: attempt.email,
-    },
-  });
+  let checkout;
+
+  try {
+    checkout = await initializeChapaCheckout({
+      attempt: extractAttempt(attempt),
+      customer: {
+        full_name: attempt.full_name,
+        phone: attempt.phone,
+        email: attempt.email,
+      },
+    });
+  } catch (error) {
+    try {
+      await pool.query(
+        `UPDATE online_payment_attempts
+         SET status = 'failed',
+             failure_reason = $1,
+             provider_response = $2::jsonb,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $3
+           AND church_id = $4
+           AND status <> 'succeeded'`,
+        [
+          error.providerMessage || error.message,
+          JSON.stringify(error.providerResult ?? null),
+          attempt.attempt_id,
+          churchId,
+        ]
+      );
+    } catch (recordError) {
+      console.error("Could not record Chapa initialization failure:", recordError);
+    }
+
+    throw error;
+  }
 
   await pool.query(
     `UPDATE online_payment_attempts

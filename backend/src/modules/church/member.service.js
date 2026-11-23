@@ -78,7 +78,7 @@ export async function registerChurchMember(churchId, input) {
 
       if (!passwordMatches) {
         const error = new Error(
-          "The existing account password could not be verified."
+          "An account already uses this phone number. Enter that account's current sign-in password to join this church."
         );
         error.statusCode = 401;
         throw error;

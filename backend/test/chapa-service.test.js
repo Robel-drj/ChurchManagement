@@ -79,6 +79,7 @@ test("Chapa checkout uses the documented v1 transaction API", async () => {
   assert.equal(payload.currency, "ETB");
   assert.equal(payload.tx_ref, "CHURCH-TEST-1");
   assert.equal(payload.phone_number, "0912345678");
+  assert.equal(payload.email, undefined);
   assert.ok(payload.customization.title.length <= 16);
   assert.equal(
     payload.callback_url,

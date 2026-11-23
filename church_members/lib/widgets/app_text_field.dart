@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_colors.dart';
+
 class AppTextField extends StatelessWidget {
   final String label;
   final String hint;
   final TextEditingController controller;
   final bool obscureText;
   final TextInputType keyboardType;
+  final Widget? prefixIcon;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
 
@@ -16,6 +19,7 @@ class AppTextField extends StatelessWidget {
     required this.controller,
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
+    this.prefixIcon,
     this.suffixIcon,
     this.validator,
   });
@@ -28,7 +32,8 @@ class AppTextField extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
             fontSize: 14,
           ),
         ),
@@ -40,6 +45,7 @@ class AppTextField extends StatelessWidget {
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,
+            prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
           ),
         ),
