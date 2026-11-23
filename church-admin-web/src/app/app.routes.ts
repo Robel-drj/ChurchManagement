@@ -3,6 +3,7 @@ import { Login } from './features/auth/login/login';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { AuditLogs } from './features/platform-admin/audit-logs/audit-logs';
+import { PlatformAdminLayout } from './features/platform-admin/layout/platform-admin-layout';
 import { ChurchAdminLayout } from './features/church-admin/layouts/church-admin-layout';
 
 export const routes: Routes = [
@@ -42,49 +43,51 @@ export const routes: Routes = [
   // ---------------------------------------
 
   {
-    path: 'platform-admin/dashboard',
-    loadComponent: () =>
-      import('./features/platform-admin/dashboard/dashboard')
-        .then((m) => m.Dashboard),
+    path: 'platform-admin',
+    component: PlatformAdminLayout,
     canActivate: [authGuard, roleGuard('super_admin')],
-  },
-
-  {
-    path: 'platform-admin/audit-logs',
-    component: AuditLogs,
-    canActivate: [authGuard, roleGuard('super_admin')],
-  },
-
-  {
-    path: 'platform-admin/churches/new',
-    loadComponent: () =>
-      import('./features/platform-admin/dashboard/church-form/ChurchForm')
-        .then((m) => m.ChurchForm),
-    canActivate: [authGuard, roleGuard('super_admin')],
-  },
-
-  {
-    path: 'platform-admin/churches',
-    loadComponent: () =>
-      import('./features/platform-admin/dashboard/churches/churches')
-        .then((m) => m.Churches),
-    canActivate: [authGuard, roleGuard('super_admin')],
-  },
-
-  {
-    path: 'platform-admin/invitations',
-    loadComponent: () =>
-      import('./features/platform-admin/dashboard/invitation/invitation')
-        .then((m) => m.Invitations),
-    canActivate: [authGuard, roleGuard('super_admin')],
-  },
-
-  {
-    path: 'platform-admin/churches/:churchId',
-    loadComponent: () =>
-      import('./features/platform-admin/dashboard/church_detail/ChurchDetail')
-        .then((m) => m.ChurchDetails),
-    canActivate: [authGuard, roleGuard('super_admin')],
+    canActivateChild: [authGuard, roleGuard('super_admin')],
+    children: [
+      {
+        path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full',
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/platform-admin/dashboard/dashboard')
+            .then((m) => m.Dashboard),
+      },
+      {
+        path: 'audit-logs',
+        component: AuditLogs,
+      },
+      {
+        path: 'churches/new',
+        loadComponent: () =>
+          import('./features/platform-admin/dashboard/church-form/ChurchForm')
+            .then((m) => m.ChurchForm),
+      },
+      {
+        path: 'churches',
+        loadComponent: () =>
+          import('./features/platform-admin/dashboard/churches/churches')
+            .then((m) => m.Churches),
+      },
+      {
+        path: 'invitations',
+        loadComponent: () =>
+          import('./features/platform-admin/dashboard/invitation/invitation')
+            .then((m) => m.Invitations),
+      },
+      {
+        path: 'churches/:churchId',
+        loadComponent: () =>
+          import('./features/platform-admin/dashboard/church_detail/ChurchDetail')
+            .then((m) => m.ChurchDetails),
+      },
+    ],
   },
 
   // ---------------------------------------
@@ -240,6 +243,12 @@ export const routes: Routes = [
             .then((m) => m.MoneyCollectorDashboard),
       },
       {
+        path: 'contributions',
+        loadComponent: () =>
+          import('./features/church-admin/finance/contributions/contributions')
+            .then((m) => m.Contributions),
+      },
+      {
         path: 'profile',
         loadComponent: () =>
           import('./features/shared/profile/role-profile')
@@ -270,6 +279,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/secretary/dashboard/dashboard')
             .then((m) => m.SecretaryDashboard),
+      },
+      {
+        path: 'members',
+        loadComponent: () =>
+          import('./features/church-admin/members/members')
+            .then((m) => m.Members),
       },
       {
         path: 'profile',

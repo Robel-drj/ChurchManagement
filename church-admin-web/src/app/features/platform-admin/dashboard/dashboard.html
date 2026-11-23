@@ -1,56 +1,5 @@
 
-<div class="admin-layout">
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-icon">C</div>
-      <div>
-        <strong>Church Platform</strong>
-        <span>Administration</span>
-      </div>
-    </div>
-
-    <div class="sidebar-label">PLATFORM</div>
-
-    <nav class="navigation">
-      <a class="nav-link active" routerLink="/platform-admin/dashboard">
-        <span class="nav-icon">▦</span>
-        Overview
-      </a>
-
-      <a class="nav-link" routerLink="/platform-admin/churches">
-        <span class="nav-icon">⌂</span>
-        Churches
-      </a>
-
-      <a class="nav-link" routerLink="/platform-admin/invitations">
-        <span class="nav-icon">✉</span>
-        Invitations
-      </a>
-
-      <a class="nav-link" routerLink="/platform-admin/audit-logs">
-        <span class="nav-icon">▤</span>
-        Audit Logs
-      </a>
-
-    </nav>
-
-    <div class="sidebar-bottom">
-      <div class="admin-profile">
-        <div class="avatar">{{ userName.charAt(0).toUpperCase() }}</div>
-        <div class="profile-info">
-          <strong>{{ userName }}</strong>
-          <span>Platform Administrator</span>
-        </div>
-      </div>
-
-      <button class="logout-button" (click)="logout()">
-        Sign out
-      </button>
-    </div>
-  </aside>
-
-  <main class="main-content">
-    <header class="topbar">
+<header class="topbar">
       <div>
         <h1>Platform overview</h1>
         <p>Monitor and manage all registered churches.</p>
@@ -245,5 +194,3 @@
         </div>
       </section>
     </section>
-  </main>
-</div>

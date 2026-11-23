@@ -232,6 +232,26 @@ export async function updatePaymentMethod(
 // CONTRIBUTION RECORDING
 // --------------------------------------------------
 
+export async function listContributionMembers(churchId) {
+  const result = await pool.query(
+    `SELECT
+       cm.id AS membership_id,
+       cm.member_number,
+       u.full_name,
+       u.phone
+     FROM church_memberships cm
+     JOIN users u
+       ON u.id = cm.user_id
+     WHERE cm.church_id = $1
+       AND cm.membership_status = 'active'
+       AND u.account_status = 'active'
+     ORDER BY u.full_name ASC, cm.member_number ASC NULLS LAST`,
+    [churchId]
+  );
+
+  return result.rows;
+}
+
 export async function createContribution(
   churchId,
   input,

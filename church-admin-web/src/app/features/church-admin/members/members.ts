@@ -2,6 +2,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { AuthService } from '../../../core/service/auth.service';
 import {
@@ -21,6 +22,7 @@ import {
 })
 export class Members implements OnInit {
     private readonly cdr = inject(ChangeDetectorRef);
+  private readonly route = inject(ActivatedRoute);
   churchId = '';
 
   members: ChurchMember[] = [];
@@ -78,6 +80,10 @@ export class Members implements OnInit {
 
     this.churchId = membership.churchId;
     this.loadMembers();
+
+    if (this.route.snapshot.queryParamMap.get('action') === 'register') {
+      this.openRegisterForm();
+    }
   }
 
   loadMembers(): void {

@@ -55,7 +55,12 @@
         class="navigation-link"
         [routerLink]="item.route"
         routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
+        [routerLinkActiveOptions]="{
+          paths: 'exact',
+          queryParams: 'ignored',
+          matrixParams: 'ignored',
+          fragment: 'ignored'
+        }"
         (click)="closeSidebar()"
       >
         <span class="navigation-icon">{{ item.icon }}</span>

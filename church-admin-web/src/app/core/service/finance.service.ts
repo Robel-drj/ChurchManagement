@@ -209,6 +209,13 @@ export interface CreateContributionRequest {
   notes?: string | null;
 }
 
+export interface ContributionMemberOption {
+  membership_id: string;
+  member_number: string | null;
+  full_name: string;
+  phone: string;
+}
+
 export interface UpdateContributionRequest {
   payment_status?: 'confirmed' | 'rejected';
   transaction_reference?: string | null;
@@ -247,6 +254,14 @@ export class FinanceService {
   getCategories(churchId: string): Observable<FinanceListResponse<FinanceCategory>> {
     return this.http.get<FinanceListResponse<FinanceCategory>>(
       `${this.apiUrl}/${churchId}/finance/categories`
+    );
+  }
+
+  getContributionMembers(
+    churchId: string
+  ): Observable<FinanceListResponse<ContributionMemberOption>> {
+    return this.http.get<FinanceListResponse<ContributionMemberOption>>(
+      `${this.apiUrl}/${churchId}/finance/contribution-members`
     );
   }
 

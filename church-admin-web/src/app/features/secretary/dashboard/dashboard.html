@@ -7,11 +7,21 @@
       <p>{{ churchName || 'Church' }} — Membership overview</p>
     </div>
 
-    <button class="refresh-btn"
-            (click)="loadMembers()"
-            [disabled]="loading">
-      ↻ Refresh
-    </button>
+    <div class="header-actions">
+      <a
+        class="primary-btn"
+        routerLink="/secretary/members"
+        [queryParams]="{ action: 'register' }"
+      >
+        + Register New Member
+      </a>
+
+      <button class="refresh-btn"
+              (click)="loadMembers()"
+              [disabled]="loading">
+        ↻ Refresh
+      </button>
+    </div>
   </div>
 
   <div class="error-message" *ngIf="errorMessage">

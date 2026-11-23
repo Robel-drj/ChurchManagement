@@ -7,11 +7,21 @@
       <p>{{ churchName || 'Church' }} — Financial overview</p>
     </div>
 
-    <button class="refresh-btn"
-            (click)="loadDashboard()"
-            [disabled]="loading">
-      ↻ Refresh
-    </button>
+    <div class="header-actions">
+      <a
+        class="primary-btn"
+        routerLink="/money-collector/contributions"
+        [queryParams]="{ action: 'record' }"
+      >
+        + Record Contribution
+      </a>
+
+      <button class="refresh-btn"
+              (click)="loadDashboard()"
+              [disabled]="loading">
+        ↻ Refresh
+      </button>
+    </div>
   </div>
 
   <div class="error-message" *ngIf="errorMessage">

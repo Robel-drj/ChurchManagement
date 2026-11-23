@@ -3,31 +3,26 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { RouterLink } from '@angular/router';
 import {
   PlatformService,
   PlatformChurch,
   ChurchStatus,
   DashboardSummary,
 } from '../../../core/service/platform.service';
-import { AuthService } from '../../../core/service/auth.service';
 import {
   ChangeDetectorRef,
 } from '@angular/core';
 @Component({
   selector: 'app-platform-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
 export class Dashboard implements OnInit {
   private readonly platformService = inject(PlatformService);
-  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 private readonly cdr = inject(ChangeDetectorRef);
-  userName =
-    this.authService.getCurrentUser()?.fullName ?? 'Administrator';
 
   summary: DashboardSummary = {
     totalChurches: 0,
@@ -149,9 +144,4 @@ this.cdr.markForCheck();
     this.router.navigate(['/platform-admin/churches/new']);
   }
 
-  logout(): void {
-    this.authService.logout();
-    this.router.navigateByUrl('/login');
-    this.cdr.markForCheck();
-  }
 }

@@ -5,6 +5,7 @@ import {
   listPaymentMethods,
   createPaymentMethod,
   updatePaymentMethod,
+  listContributionMembers,
     createContribution,
   listContributions,
   getContributionDetails,
@@ -207,6 +208,20 @@ export async function editPaymentMethod(req, res, next) {
 // --------------------------------------------------
 // CONTRIBUTION CONTROLLERS
 // --------------------------------------------------
+
+export async function getContributionMembers(req, res, next) {
+  try {
+    const members = await listContributionMembers(req.church.id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Contribution members retrieved successfully.",
+      data: members,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
 export async function addContribution(req, res, next) {
   try {

@@ -47,6 +47,11 @@ const WORKSPACES: Record<WorkspaceRole, WorkspaceConfig> = {
         route: '/money-collector/dashboard',
       },
       {
+        label: 'Contributions',
+        icon: '◈',
+        route: '/money-collector/contributions',
+      },
+      {
         label: 'My Profile',
         icon: '◎',
         route: '/money-collector/profile',
@@ -67,6 +72,11 @@ const WORKSPACES: Record<WorkspaceRole, WorkspaceConfig> = {
         label: 'Dashboard',
         icon: '⌂',
         route: '/secretary/dashboard',
+      },
+      {
+        label: 'Members',
+        icon: '♙',
+        route: '/secretary/members',
       },
       {
         label: 'My Profile',

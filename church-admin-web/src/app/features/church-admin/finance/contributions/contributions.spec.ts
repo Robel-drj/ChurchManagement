@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { NEVER } from 'rxjs';
 
 import { AuthService } from '../../../../core/service/auth.service';
@@ -8,7 +9,6 @@ import {
   FinanceService,
   UpdateContributionRequest,
 } from '../../../../core/service/finance.service';
-import { MemberService } from '../../../../core/service/member.service';
 import { Contributions } from './contributions';
 
 describe('Contributions', () => {
@@ -36,7 +36,12 @@ describe('Contributions', () => {
       providers: [
         { provide: AuthService, useValue: {} },
         { provide: FinanceService, useValue: financeService },
-        { provide: MemberService, useValue: {} },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { queryParamMap: convertToParamMap({}) },
+          },
+        },
       ],
     }).compileComponents();
 

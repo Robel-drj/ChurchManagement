@@ -30,11 +30,22 @@
 .refresh-btn,
 .primary-btn,
 .secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 8px;
   padding: 10px 15px;
   font-weight: 600;
   cursor: pointer;
+  text-decoration: none;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .refresh-btn,
@@ -277,6 +288,14 @@ table {
 
     h1 {
       font-size: 24px;
+    }
+  }
+
+  .header-actions {
+    width: 100%;
+
+    > * {
+      flex: 1;
     }
   }
 

@@ -1,15 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { AuthService } from '../../../../core/service/auth.service';
-import {
-  MemberService,
-  ChurchMember,
-} from '../../../../core/service/member.service';
 
 import {
   FinanceService,
+  ContributionMemberOption,
   Contribution,
   ContributionDetails,
   FinanceCategory,
@@ -28,11 +26,12 @@ import {
 })
 export class Contributions implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly route = inject(ActivatedRoute);
 
   churchId = '';
 
   contributions: Contribution[] = [];
-  members: ChurchMember[] = [];
+  members: ContributionMemberOption[] = [];
   categories: FinanceCategory[] = [];
   paymentMethods: FinancePaymentMethod[] = [];
 
@@ -81,8 +80,7 @@ export class Contributions implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private financeService: FinanceService,
-    private memberService: MemberService
+    private financeService: FinanceService
   ) {}
 
   ngOnInit(): void {
@@ -97,6 +95,10 @@ export class Contributions implements OnInit {
 
     this.loadOptions();
     this.loadContributions();
+
+    if (this.route.snapshot.queryParamMap.get('action') === 'record') {
+      this.openCreateForm();
+    }
   }
 
   loadOptions(): void {
@@ -114,11 +116,9 @@ export class Contributions implements OnInit {
       this.cdr.markForCheck();
     };
 
-    this.memberService.getMembers(this.churchId, 1, 100, '').subscribe({
+    this.financeService.getContributionMembers(this.churchId).subscribe({
       next: (response) => {
-        this.members = response.data.members.filter(
-          (member) => member.membership_status === 'active'
-        );
+        this.members = response.data;
         finish();
       },
       error: (error) => {
