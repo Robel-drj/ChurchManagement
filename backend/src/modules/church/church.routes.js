@@ -21,6 +21,7 @@ import {
   getPaymentMethods,
   addPaymentMethod,
   editPaymentMethod,
+  getContributionMembers,
   addContribution,
 getContributions,
 getContribution,
@@ -287,6 +288,14 @@ router.patch(
 // --------------------------------------------------
 // CONTRIBUTION RECORDS
 // --------------------------------------------------
+
+// List the minimal active-member data needed to record a contribution.
+router.get(
+  "/:churchId/finance/contribution-members",
+  authenticate,
+  requireChurchPermission("finance.transaction.create"),
+  getContributionMembers
+);
 
 // Record a contribution.
 router.post(
