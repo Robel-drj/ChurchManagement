@@ -1,0 +1,345 @@
+
+<div class="adjustments-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Contribution Adjustments</h1>
+      <p>Review refund, reversal, and correction requests.</p>
+    </div>
+
+    <button class="primary-btn" type="button" (click)="openCreateForm()">
+      + Request Adjustment
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>{{ errorMessage }}</span>
+    <button type="button" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span>{{ successMessage }}</span>
+    <button type="button" (click)="successMessage = ''">×</button>
+  </div>
+
+  <section class="filter-card">
+    <div class="filter-grid">
+
+      <div class="form-group">
+        <label>Request Status</label>
+        <select name="statusFilter" [(ngModel)]="statusFilter">
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Adjustment Type</label>
+        <select name="typeFilter" [(ngModel)]="typeFilter">
+          <option value="">All types</option>
+          <option value="refund">Refund</option>
+          <option value="reversal">Reversal</option>
+          <option value="correction">Correction</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="clearFilters()"
+        >
+          Clear
+        </button>
+
+        <button
+          class="primary-btn"
+          type="button"
+          (click)="applyFilters()"
+        >
+          Apply
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="adjustments-card">
+
+    <div class="section-header">
+      <div>
+        <h2>Adjustment Requests</h2>
+        <p>{{ total }} request(s) found</p>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      Loading adjustment requests...
+    </div>
+
+    <div
+      *ngIf="!loading && adjustments.length === 0"
+      class="empty-state"
+    >
+      <div class="empty-icon">📑</div>
+      <h3>No adjustment requests</h3>
+      <p>There are no requests matching your selected filters.</p>
+    </div>
+
+    <div
+      *ngIf="!loading && adjustments.length > 0"
+      class="table-wrapper"
+    >
+      <table>
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Previous Amount</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Requested By</th>
+            <th>Date</th>
+            <th>Decision</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of adjustments">
+
+            <td>{{ item.member_name || '—' }}</td>
+
+            <td>
+              <span class="type-badge">
+                {{ formatType(item.adjustment_type) }}
+              </span>
+            </td>
+
+            <td class="amount">
+              {{ formatAmount(item.amount) }}
+            </td>
+
+            <td>
+              {{ formatAmount(item.previous_amount) }}
+            </td>
+
+            <td class="reason-cell" [title]="item.reason">
+              {{ item.reason }}
+            </td>
+
+            <td>
+              <span
+                class="status-badge"
+                [ngClass]="getStatusClass(item.status)"
+              >
+                {{ formatStatus(item.status) }}
+              </span>
+            </td>
+
+            <td>{{ item.created_by_name || '—' }}</td>
+
+            <td>{{ item.created_at | date:'mediumDate' }}</td>
+
+            <td>
+              <div
+                *ngIf="item.status === 'pending'"
+                class="decision-actions"
+              >
+                <button
+                  class="approve-btn"
+                  type="button"
+                  (click)="decideAdjustment(item, 'approved')"
+                >
+                  Approve
+                </button>
+
+                <button
+                  class="reject-btn"
+                  type="button"
+                  (click)="decideAdjustment(item, 'rejected')"
+                >
+                  Reject
+                </button>
+              </div>
+
+              <span *ngIf="item.status !== 'pending'" class="decided-label">
+                {{ formatStatus(item.status) }}
+              </span>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div
+      *ngIf="!loading && totalPages > 1"
+      class="pagination"
+    >
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+
+      <div class="pagination-buttons">
+        <button
+          type="button"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+        >
+          Previous
+        </button>
+
+        <button
+          *ngFor="let page of getPageNumbers()"
+          type="button"
+          [class.current-page]="page === currentPage"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          type="button"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<!-- CREATE ADJUSTMENT MODAL -->
+<div
+  class="modal-backdrop"
+  *ngIf="showCreateForm"
+  (click)="closeCreateForm()"
+>
+  <section class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2>Request Contribution Adjustment</h2>
+        <p>Submit a request for review and approval.</p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeCreateForm()">
+        ×
+      </button>
+    </div>
+
+    <form (ngSubmit)="createAdjustment()">
+
+      <div class="form-group">
+        <label>Select Contribution *</label>
+        <select
+          name="contribution_id"
+          [(ngModel)]="createData.contribution_id"
+          required
+        >
+          <option value="">Choose contribution</option>
+
+          <option
+            *ngFor="let contribution of contributions"
+            [value]="contribution.id"
+          >
+            {{ contribution.member_name }} —
+            {{ contribution.category_name }} —
+            {{ formatAmount(contribution.amount) }}
+          </option>
+        </select>
+
+        <small *ngIf="loadingContributions">
+          Loading contribution records...
+        </small>
+      </div>
+
+      <div class="selected-contribution" *ngIf="selectedContribution">
+        <span>Selected contribution</span>
+        <strong>{{ selectedContribution.member_name }}</strong>
+        <p>
+          {{ selectedContribution.category_name }} ·
+          {{ formatAmount(selectedContribution.amount) }}
+        </p>
+        <small>
+          Current status: {{ selectedContribution.payment_status }}
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Adjustment Type *</label>
+        <select
+          name="adjustment_type"
+          [(ngModel)]="createData.adjustment_type"
+          required
+        >
+          <option value="refund">Refund</option>
+          <option value="reversal">Reversal</option>
+          <option value="correction">Correction</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>
+          {{ createData.adjustment_type === 'correction' ? 'Corrected Total Amount *' : 'Adjustment Amount *' }}
+        </label>
+
+        <input
+          type="number"
+          name="amount"
+          [(ngModel)]="createData.amount"
+          min="0.01"
+          step="0.01"
+          required
+        />
+
+        <small *ngIf="createData.adjustment_type === 'correction'">
+          For a correction, enter the new corrected total, not the difference.
+          The backend preserves the previous amount.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Reason *</label>
+        <textarea
+          name="reason"
+          [(ngModel)]="createData.reason"
+          rows="4"
+          minlength="5"
+          maxlength="2000"
+          required
+          placeholder="Explain why this adjustment is necessary..."
+        ></textarea>
+      </div>
+
+      <div class="form-note">
+        Submitting this request does not immediately change the original
+        contribution. It must be reviewed and decided through the approval
+        workflow.
+      </div>
+
+      <div class="modal-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeCreateForm()"
+          [disabled]="saving"
+        >
+          Cancel
+        </button>
+
+        <button
+          class="primary-btn"
+          type="submit"
+          [disabled]="saving || loadingContributions"
+        >
+          {{ saving ? 'Submitting...' : 'Submit Request' }}
+        </button>
+      </div>
+
+    </form>
+  </section>
+</div>

@@ -1,0 +1,249 @@
+
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">C</div>
+      <div>
+        <strong>Church Platform</strong>
+        <span>Administration</span>
+      </div>
+    </div>
+
+    <div class="sidebar-label">PLATFORM</div>
+
+    <nav class="navigation">
+      <a class="nav-link active" routerLink="/platform-admin/dashboard">
+        <span class="nav-icon">▦</span>
+        Overview
+      </a>
+
+      <a class="nav-link" routerLink="/platform-admin/churches">
+        <span class="nav-icon">⌂</span>
+        Churches
+      </a>
+
+      <a class="nav-link" routerLink="/platform-admin/invitations">
+        <span class="nav-icon">✉</span>
+        Invitations
+      </a>
+
+      <a class="nav-link" routerLink="/platform-admin/audit-logs">
+        <span class="nav-icon">▤</span>
+        Audit Logs
+      </a>
+
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="admin-profile">
+        <div class="avatar">{{ userName.charAt(0).toUpperCase() }}</div>
+        <div class="profile-info">
+          <strong>{{ userName }}</strong>
+          <span>Platform Administrator</span>
+        </div>
+      </div>
+
+      <button class="logout-button" (click)="logout()">
+        Sign out
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div>
+        <h1>Platform overview</h1>
+        <p>Monitor and manage all registered churches.</p>
+      </div>
+
+      <button class="primary-button" (click)="registerChurch()">
+        + Register church
+      </button>
+    </header>
+
+    <section class="content">
+      @if (errorMessage) {
+        <div class="alert error-alert">{{ errorMessage }}</div>
+      }
+
+      @if (successMessage) {
+        <div class="alert success-alert">{{ successMessage }}</div>
+      }
+
+      <div class="section-heading">
+        <div>
+          <h2>Church statistics</h2>
+          <p>Overview of churches registered on the platform.</p>
+        </div>
+
+        <button
+          class="secondary-button"
+          (click)="loadDashboard()"
+          [disabled]="loadingSummary || loadingChurches"
+        >
+          Refresh
+        </button>
+      </div>
+
+      <section class="stats-grid">
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Total churches</span>
+            <span class="stat-icon blue">⌂</span>
+          </div>
+          <strong class="stat-value">
+            {{ loadingSummary ? '...' : summary.totalChurches }}
+          </strong>
+          <span class="stat-description">Registered on the platform</span>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Active churches</span>
+            <span class="stat-icon green">✓</span>
+          </div>
+          <strong class="stat-value">
+            {{ loadingSummary ? '...' : summary.activeChurches }}
+          </strong>
+          <span class="stat-description">Currently active</span>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Pending churches</span>
+            <span class="stat-icon orange">◷</span>
+          </div>
+          <strong class="stat-value">
+            {{ loadingSummary ? '...' : summary.pendingChurches }}
+          </strong>
+          <span class="stat-description">Awaiting activation</span>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Suspended churches</span>
+            <span class="stat-icon red">!</span>
+          </div>
+          <strong class="stat-value">
+            {{ loadingSummary ? '...' : summary.suspendedChurches }}
+          </strong>
+          <span class="stat-description">Currently suspended</span>
+        </article>
+      </section>
+
+      <section class="church-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Registered churches</h2>
+            <p>Search and manage church registrations.</p>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-box">
+            <input
+              type="search"
+              placeholder="Search church name, code or email..."
+              [(ngModel)]="search"
+              (keyup.enter)="searchChurches()"
+            />
+            <button class="secondary-button" (click)="searchChurches()">
+              Search
+            </button>
+          </div>
+
+          <select
+            [(ngModel)]="selectedStatus"
+            (ngModelChange)="filterByStatus()"
+            aria-label="Filter churches by status"
+          >
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Church</th>
+                <th>Church code</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Registered</th>
+                <th></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @if (loadingChurches) {
+                <tr>
+                  <td colspan="7" class="empty-state">
+                    Loading churches...
+                  </td>
+                </tr>
+              } @else if (churches.length === 0) {
+                <tr>
+                  <td colspan="7" class="empty-state">
+                    No churches found.
+                  </td>
+                </tr>
+              } @else {
+                @for (church of churches; track church.id) {
+                  <tr>
+                    <td class="church-name">{{ church.church_name }}</td>
+                    <td>{{ church.church_code }}</td>
+                    <td>{{ church.email || '—' }}</td>
+                    <td>{{ church.phone || '—' }}</td>
+                    <td>
+                      <span class="status" [ngClass]="church.status">
+                        {{ church.status }}
+                      </span>
+                    </td>
+                    <td>{{ church.created_at | date:'mediumDate' }}</td>
+                    <td>
+                      <button
+                        class="view-button"
+                        (click)="openChurch(church)"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <span>
+            Page {{ currentPage }}
+            <span class="muted"> · {{ returned }} records on this page</span>
+          </span>
+
+          <div class="pagination-actions">
+            <button
+              class="secondary-button"
+              (click)="previousPage()"
+              [disabled]="offset === 0 || loadingChurches"
+            >
+              Previous
+            </button>
+
+            <button
+              class="secondary-button"
+              (click)="nextPage()"
+              [disabled]="returned < limit || loadingChurches"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+</div>

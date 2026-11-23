@@ -1,0 +1,270 @@
+
+<div class="profile-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Church Profile</h1>
+      <p>View and update your church information.</p>
+    </div>
+
+    <button
+      *ngIf="profile && !editing"
+      class="primary-btn"
+      type="button"
+      (click)="startEditing()"
+    >
+      Edit Profile
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>{{ errorMessage }}</span>
+    <button type="button" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span>{{ successMessage }}</span>
+    <button type="button" (click)="successMessage = ''">×</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    Loading church profile...
+  </div>
+
+  <ng-container *ngIf="profile && !loading">
+
+    <section class="profile-overview">
+      <div class="church-logo">
+        <img
+          *ngIf="profile.logo_url"
+          [src]="profile.logo_url"
+          [alt]="profile.church_name + ' logo'"
+        />
+
+        <span *ngIf="!profile.logo_url">
+          {{ profile.church_name.charAt(0).toUpperCase() }}
+        </span>
+      </div>
+
+      <div class="church-overview-info">
+        <h2>{{ profile.church_name }}</h2>
+        <p>Church Code: <strong>{{ profile.church_code }}</strong></p>
+        <span
+          class="status-badge"
+          [class.status-active]="profile.status === 'active'"
+          [class.status-pending]="profile.status === 'pending'"
+          [class.status-suspended]="profile.status === 'suspended'"
+        >
+          {{ profile.status }}
+        </span>
+      </div>
+    </section>
+
+    <section class="profile-card">
+
+      <div class="section-header">
+        <div>
+          <h2>Church Information</h2>
+          <p>
+            {{ editing ? 'Update your church details below.' : 'Your registered church information.' }}
+          </p>
+        </div>
+      </div>
+
+      <form *ngIf="editing" (ngSubmit)="saveProfile()">
+
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>Church Name *</label>
+            <input
+              type="text"
+              name="church_name"
+              [(ngModel)]="form.church_name"
+              required
+              minlength="2"
+              maxlength="150"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Church Code</label>
+            <input
+              type="text"
+              [value]="profile.church_code"
+              disabled
+            />
+            <small>Church code cannot be changed here.</small>
+          </div>
+
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input
+              type="tel"
+              name="phone"
+              [(ngModel)]="form.phone"
+              maxlength="20"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Email Address</label>
+            <input
+              type="email"
+              name="email"
+              [(ngModel)]="form.email"
+              maxlength="150"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Church Address</label>
+            <textarea
+              name="address"
+              [(ngModel)]="form.address"
+              rows="3"
+              maxlength="500"
+            ></textarea>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Church Profile Photo</label>
+
+            <div class="photo-editor">
+              <div class="photo-preview">
+                <img
+                  *ngIf="logoPreviewUrl"
+                  [src]="logoPreviewUrl"
+                  [alt]="form.church_name + ' profile photo preview'"
+                />
+
+                <span *ngIf="!logoPreviewUrl">
+                  {{ (form.church_name || 'C').charAt(0).toUpperCase() }}
+                </span>
+              </div>
+
+              <div class="photo-controls">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  (change)="onLogoFileSelected($event)"
+                  [disabled]="saving"
+                />
+
+                <strong *ngIf="selectedLogoFile">
+                  {{ selectedLogoFile.name }}
+                </strong>
+
+                <button
+                  *ngIf="selectedLogoFile || form.logo_url"
+                  class="remove-photo-btn"
+                  type="button"
+                  (click)="removeLogo()"
+                  [disabled]="saving"
+                >
+                  Remove photo
+                </button>
+
+                <small>
+                  Choose a JPEG, PNG, or WebP image from your device. Maximum
+                  size: 5 MB.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Or use a public image URL</label>
+            <input
+              type="url"
+              name="logo_url"
+              [(ngModel)]="form.logo_url"
+              placeholder="https://example.com/church-logo.png"
+            />
+            <small>
+              A selected local file takes priority over this URL when saved.
+            </small>
+          </div>
+
+        </div>
+
+        <div class="modal-actions">
+          <button
+            class="secondary-btn"
+            type="button"
+            (click)="cancelEditing()"
+            [disabled]="saving"
+          >
+            Cancel
+          </button>
+
+          <button
+            class="primary-btn"
+            type="submit"
+            [disabled]="saving"
+          >
+            {{ saving ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+
+      </form>
+
+      <div *ngIf="!editing" class="profile-details">
+
+        <div class="detail-item">
+          <span>Church Name</span>
+          <strong>{{ profile.church_name }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Church Code</span>
+          <strong>{{ profile.church_code }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Phone Number</span>
+          <strong>{{ profile.phone || 'Not provided' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Email Address</span>
+          <strong>{{ profile.email || 'Not provided' }}</strong>
+        </div>
+
+        <div class="detail-item full-width">
+          <span>Address</span>
+          <strong>{{ profile.address || 'Not provided' }}</strong>
+        </div>
+
+        <div class="detail-item full-width">
+          <span>Church Logo URL</span>
+          <strong class="url-value">
+            {{ profile.logo_url || 'No logo URL provided' }}
+          </strong>
+          <a
+            *ngIf="profile.logo_url"
+            [href]="profile.logo_url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open logo image
+          </a>
+        </div>
+
+        <div class="detail-item">
+          <span>Registration Date</span>
+          <strong>{{ profile.created_at | date:'mediumDate' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Church Status</span>
+          <strong>{{ profile.status | titlecase }}</strong>
+        </div>
+
+      </div>
+
+    </section>
+
+  </ng-container>
+
+</div>

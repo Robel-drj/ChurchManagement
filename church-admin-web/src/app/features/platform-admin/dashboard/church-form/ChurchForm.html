@@ -1,0 +1,134 @@
+<div class="page-container">
+  <header class="topbar">
+    <div>
+      <a routerLink="/platform-admin/dashboard" class="back-link">
+        ← Back to Dashboard
+      </a>
+      <h1>Register a Church</h1>
+      <p>Add a new church to the platform.</p>
+    </div>
+  </header>
+
+  <main class="form-container">
+    <section class="form-card">
+      <div class="form-heading">
+        <div class="heading-icon">✚</div>
+        <div>
+          <h2>Church Information</h2>
+          <p>Enter the church's registration details below.</p>
+        </div>
+      </div>
+
+      @if (errorMessage) {
+        <div class="alert error-alert">
+          {{ errorMessage }}
+        </div>
+      }
+
+      @if (successMessage) {
+        <div class="alert success-alert">
+          {{ successMessage }}
+        </div>
+      }
+
+      <form #churchForm="ngForm" (ngSubmit)="submitForm()">
+
+        <div class="form-group">
+          <label for="churchName">Church Name *</label>
+          <input
+            id="churchName"
+            type="text"
+            name="churchName"
+            [(ngModel)]="form.churchName"
+            placeholder="Enter church name"
+            required
+            maxlength="150"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="address">Church Address</label>
+          <textarea
+            id="address"
+            name="address"
+            [(ngModel)]="form.address"
+            placeholder="Enter church address"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input
+              id="phone"
+              type="tel"
+              name="phone"
+              [(ngModel)]="form.phone"
+              placeholder="Enter phone number"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              [(ngModel)]="form.email"
+              placeholder="Enter email address"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="logoUrl">Church Logo URL</label>
+          <input
+            id="logoUrl"
+            type="url"
+            name="logoUrl"
+            [(ngModel)]="form.logoUrl"
+            placeholder="https://example.com/church-logo.png"
+          />
+          <small>
+            Optional. You can add or update the church logo later.
+          </small>
+        </div>
+
+        <div class="registration-note">
+          <strong>Registration status: Pending</strong>
+          <p>
+            After registration, the church will be created as pending.
+            You can activate it from the church details page. Registration
+            does not give the Platform Administrator access to the church
+            workspace; invite a separate Church Administrator account.
+          </p>
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="cancel-button"
+            (click)="cancel()"
+            [disabled]="loading"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="submit-button"
+            [disabled]="loading || churchForm.invalid"
+          >
+            @if (loading) {
+              Registering...
+            } @else {
+              Register Church
+            }
+          </button>
+        </div>
+
+      </form>
+    </section>
+  </main>
+</div>

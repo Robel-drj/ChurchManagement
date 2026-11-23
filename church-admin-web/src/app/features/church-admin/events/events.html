@@ -1,0 +1,412 @@
+
+<div class="events-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Church Events</h1>
+      <p>Create and manage church activities, meetings, programs and celebrations.</p>
+    </div>
+
+    <button class="primary-btn" (click)="openCreateForm()">
+      + Create Event
+    </button>
+  </div>
+
+  <div class="alert success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="alert error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="filter-card">
+
+    <input
+      type="text"
+      [(ngModel)]="search"
+      placeholder="Search events..."
+      (keyup.enter)="applyFilters()"/>
+
+    <select [(ngModel)]="statusFilter">
+      <option value="">All statuses</option>
+      <option value="draft">Draft</option>
+      <option value="published">Published</option>
+      <option value="cancelled">Cancelled</option>
+      <option value="completed">Completed</option>
+    </select>
+
+    <button class="primary-btn" (click)="applyFilters()">
+      Search
+    </button>
+
+    <button class="secondary-btn" (click)="resetFilters()">
+      Reset
+    </button>
+
+  </div>
+
+  <div class="events-card">
+
+    <div class="loading-state" *ngIf="loading">
+      Loading events...
+    </div>
+
+    <div class="empty-state"
+         *ngIf="!loading && events.length === 0">
+      <div class="empty-icon">📅</div>
+      <h3>No events found</h3>
+      <p>Create an event to get started.</p>
+      <button class="primary-btn" (click)="openCreateForm()">
+        Create Event
+      </button>
+    </div>
+
+    <div class="event-list"
+         *ngIf="!loading && events.length > 0">
+
+      <div class="event-row"
+           *ngFor="let event of events; trackBy: trackByEvent">
+
+        <div class="event-date-box">
+          <span class="month">
+            {{ event.start_date | date:'MMM' }}
+          </span>
+          <span class="day">
+            {{ event.start_date | date:'dd' }}
+          </span>
+          <span class="year">
+            {{ event.start_date | date:'yyyy' }}
+          </span>
+        </div>
+
+        <div class="event-info">
+          <h3>{{ event.title }}</h3>
+
+          <p class="event-description">
+            {{ event.description || 'No description available.' }}
+          </p>
+
+          <div class="event-meta">
+            <span *ngIf="event.location">📍 {{ event.location }}</span>
+            <span>🕒 {{ event.start_date | date:'short' }}</span>
+            <span *ngIf="event.end_date">
+              Until {{ event.end_date | date:'short' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="event-actions">
+          <span class="status-badge"
+                [ngClass]="getStatusClass(event.status)">
+            {{ event.status }}
+          </span>
+
+          <button class="secondary-btn"
+                  (click)="openDetails(event)">
+            Details
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="pagination"
+         *ngIf="!loading && totalPages > 1">
+
+      <button class="secondary-btn"
+              [disabled]="page <= 1"
+              (click)="previousPage()">
+        Previous
+      </button>
+
+      <span>Page {{ page }} of {{ totalPages }}</span>
+
+      <button class="secondary-btn"
+              [disabled]="page >= totalPages"
+              (click)="nextPage()">
+        Next
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- CREATE / EDIT EVENT MODAL -->
+
+  <div class="modal-overlay"
+       *ngIf="showForm"
+       (click)="closeForm()">
+
+    <div class="modal-card"
+         (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div>
+          <h2>{{ editing ? 'Edit Event' : 'Create Event' }}</h2>
+          <p>Enter event details below.</p>
+        </div>
+
+        <button class="close-btn"
+                (click)="closeForm()">×</button>
+      </div>
+
+      <form (ngSubmit)="saveEvent()">
+
+        <div class="form-group">
+          <label>Event Title *</label>
+
+          <input
+            type="text"
+            name="title"
+            [(ngModel)]="form.title"
+            maxlength="200"
+            required
+            placeholder="Enter event title"/>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+
+          <textarea
+            name="description"
+            rows="5"
+            [(ngModel)]="form.description"
+            maxlength="10000"
+            placeholder="Describe the event...">
+          </textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Location</label>
+
+          <input
+            type="text"
+            name="location"
+            [(ngModel)]="form.location"
+            maxlength="500"
+            placeholder="Event location"/>
+        </div>
+
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>Start Date *</label>
+
+            <input
+              type="datetime-local"
+              name="start_date"
+              [(ngModel)]="form.start_date"
+              required/>
+          </div>
+
+          <div class="form-group">
+            <label>End Date</label>
+
+            <input
+              type="datetime-local"
+              name="end_date"
+              [(ngModel)]="form.end_date"/>
+          </div>
+
+        </div>
+
+        <div class="form-group">
+          <label>Event Images / Videos</label>
+
+          <div class="file-picker">
+            <input
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              (change)="onFilesSelected($event)"/>
+
+            <p>Select images or videos to attach to this event.</p>
+          </div>
+        </div>
+
+        <div class="selected-media-grid"
+             *ngIf="previews.length > 0">
+
+          <div class="selected-media-item"
+               *ngFor="let preview of previews; let i = index">
+
+            <img *ngIf="preview.type === 'image'"
+                 [src]="preview.url"/>
+
+            <video *ngIf="preview.type === 'video'"
+                   [src]="preview.url"
+                   muted>
+            </video>
+
+            <button type="button"
+                    class="remove-file"
+                    (click)="removeSelectedFile(i)">
+              ×
+            </button>
+
+            <div class="file-name">
+              {{ preview.file.name }}
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="form-note">
+          Events are initially saved as drafts. You can publish them after creation.
+        </div>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="secondary-btn"
+            [disabled]="saving"
+            (click)="closeForm()">
+            Close
+          </button>
+
+          <button
+            type="submit"
+            class="primary-btn"
+            [disabled]="saving || uploading">
+            {{ saving ? (uploading ? 'Uploading media...' : 'Saving...') : (editing ? 'Update Event' : 'Create Event') }}
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- EVENT DETAILS MODAL -->
+
+  <div class="modal-overlay"
+       *ngIf="showDetails && selectedEvent"
+       (click)="closeDetails()">
+
+    <div class="modal-card details-modal"
+         (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div>
+          <h2>{{ selectedEvent.title }}</h2>
+          <p>Event details and management</p>
+        </div>
+
+        <button class="close-btn"
+                (click)="closeDetails()">×</button>
+      </div>
+
+      <div class="details-content">
+
+        <div class="detail-row">
+          <label>Status</label>
+          <span class="status-badge"
+                [ngClass]="getStatusClass(selectedEvent.status)">
+            {{ selectedEvent.status }}
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <label>Description</label>
+          <p>{{ selectedEvent.description || 'No description' }}</p>
+        </div>
+
+        <div class="detail-row">
+          <label>Location</label>
+          <p>{{ selectedEvent.location || 'Not specified' }}</p>
+        </div>
+
+        <div class="detail-row">
+          <label>Start</label>
+          <p>{{ selectedEvent.start_date | date:'fullDate' }} · {{ selectedEvent.start_date | date:'shortTime' }}</p>
+        </div>
+
+        <div class="detail-row">
+          <label>End</label>
+          <p>{{ selectedEvent.end_date ? (selectedEvent.end_date | date:'medium') : 'Not specified' }}</p>
+        </div>
+
+        <div class="event-media-section"
+             *ngIf="selectedEvent.media?.length">
+
+          <h3>Event Media</h3>
+
+          <div class="event-media-grid">
+
+            <div class="event-media-item"
+                 *ngFor="let media of selectedEvent.media; trackBy: trackByMedia">
+
+              <img *ngIf="media.media_type === 'image'"
+                   [src]="media.media_url"/>
+
+              <video *ngIf="media.media_type === 'video'"
+                     [src]="media.media_url"
+                     controls>
+              </video>
+
+              <button class="remove-media-btn"
+                      (click)="deleteMedia(media)">
+                Remove
+              </button>
+
+              </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="modal-actions event-detail-actions">
+
+        <button class="secondary-btn"
+                (click)="closeDetails()">
+          Close
+        </button>
+
+        <button class="secondary-btn"
+                *ngIf="selectedEvent.status === 'draft' || selectedEvent.status === 'published'"
+                (click)="openEditForm(selectedEvent)">
+          Edit
+        </button>
+
+        <button class="primary-btn"
+                *ngIf="selectedEvent.status === 'draft'"
+                (click)="performAction(selectedEvent, 'publish')">
+          Publish
+        </button>
+
+        <button class="secondary-btn"
+                *ngIf="selectedEvent.status === 'published'"
+                (click)="performAction(selectedEvent, 'unpublish')">
+          Unpublish
+        </button>
+
+        <button class="secondary-btn"
+                *ngIf="selectedEvent.status === 'published'"
+                (click)="performAction(selectedEvent, 'complete')">
+          Complete
+        </button>
+
+        <button class="danger-btn"
+                *ngIf="selectedEvent.status === 'draft' || selectedEvent.status === 'published'"
+                (click)="performAction(selectedEvent, 'cancel')">
+          Cancel Event
+        </button>
+
+        <button class="danger-btn"
+                *ngIf="selectedEvent.status === 'draft' || selectedEvent.status === 'cancelled' || selectedEvent.status === 'completed'"
+                (click)="deleteEvent(selectedEvent)">
+          Delete
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

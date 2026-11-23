@@ -1,0 +1,85 @@
+
+<div class="login-page">
+  <div class="login-card">
+
+    <div class="brand">
+      <div class="brand-logo">C</div>
+      <h1>Church Management</h1>
+      <p>Administration Portal</p>
+    </div>
+
+    <div class="welcome">
+      <h2>Welcome back</h2>
+      <p>Sign in to access your administration dashboard.</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="submit()">
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email, phone, or member number</mat-label>
+        <input
+          matInput
+          type="text"
+          formControlName="identifier"
+          autocomplete="username"
+          placeholder="Enter your email, phone, or member number"
+        />
+
+        @if (loginForm.controls.identifier.hasError('required')
+          && loginForm.controls.identifier.touched) {
+          <mat-error>Email, phone, or member number is required.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input
+          matInput
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+          placeholder="Enter your password"
+        />
+
+        @if (loginForm.controls.password.hasError('required')
+          && loginForm.controls.password.touched) {
+          <mat-error>Password is required.</mat-error>
+        }
+      </mat-form-field>
+
+      @if (errorMessage) {
+        <div class="message error">
+          {{ errorMessage }}
+        </div>
+      }
+
+      @if (successMessage) {
+        <div class="message success">
+          {{ successMessage }}
+          <p>Your authentication tokens have been stored for this session.</p>
+          Dashboard routing will be configured in the next step.
+        </div>
+      }
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        class="login-button"
+        [disabled]="loginForm.invalid || loading"
+      >
+        @if (loading) {
+          <mat-spinner diameter="22"></mat-spinner>
+        } @else {
+          Sign In
+        }
+      </button>
+
+    </form>
+
+    <div class="footer">
+      Church Management System
+    </div>
+
+  </div>
+</div>

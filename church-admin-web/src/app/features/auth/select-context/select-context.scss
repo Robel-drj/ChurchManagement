@@ -1,0 +1,74 @@
+
+.selection-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: #f4f7fb;
+}
+
+.selection-card {
+  width: 100%;
+  max-width: 650px;
+  padding: 32px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
+
+h1 {
+  margin: 0 0 8px;
+  color: #172554;
+}
+
+.subtitle {
+  color: #64748b;
+  margin-bottom: 28px;
+}
+
+.church-section {
+  padding: 20px 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.church-section h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.church-section p {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.role-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.role-button {
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 16px;
+  background: #1d4ed8;
+  color: white;
+  cursor: pointer;
+}
+
+.role-button:hover {
+  background: #1e40af;
+}
+
+.logout-button {
+  margin-top: 20px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: white;
+  color: #334155;
+  cursor: pointer;
+}

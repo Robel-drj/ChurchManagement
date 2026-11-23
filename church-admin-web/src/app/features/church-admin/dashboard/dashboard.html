@@ -1,0 +1,167 @@
+<div class="dashboard-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Church Dashboard</h1>
+      <p>Welcome to your church management overview.</p>
+    </div>
+
+    <button class="refresh-btn" (click)="loadDashboard()" [disabled]="loading">
+      ↻ Refresh
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="state-message">
+    Loading church dashboard...
+  </div>
+
+  <div *ngIf="errorMessage && !loading" class="error-message">
+    {{ errorMessage }}
+    <button (click)="loadDashboard()">Try again</button>
+  </div>
+
+  <ng-container *ngIf="dashboard && !loading">
+
+    <section class="church-overview">
+      <div>
+        <span class="eyebrow">CURRENT CHURCH</span>
+        <h2>{{ dashboard.church.church_name }}</h2>
+        <p>Church code: {{ dashboard.church.church_code }}</p>
+      </div>
+
+      <span
+        class="status"
+        [class.active]="dashboard.church.status === 'active'"
+      >
+        {{ dashboard.church.status }}
+      </span>
+    </section>
+
+    <section class="statistics-grid">
+
+      <div class="stat-card">
+        <div class="stat-icon blue">♙</div>
+        <p>Total Members</p>
+        <h2>{{ dashboard.memberships.total_members }}</h2>
+        <span>All registered memberships</span>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon green">✓</div>
+        <p>Active Members</p>
+        <h2>{{ dashboard.memberships.active_members }}</h2>
+        <span>Currently active</span>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon orange">◷</div>
+        <p>Pending Members</p>
+        <h2>{{ dashboard.memberships.pending_members }}</h2>
+        <span>Awaiting approval</span>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon red">⊘</div>
+        <p>Suspended Members</p>
+        <h2>{{ dashboard.memberships.suspended_members }}</h2>
+        <span>Currently suspended</span>
+      </div>
+
+    </section>
+
+    <section class="content-grid">
+
+      <div class="panel registrations-panel">
+        <div class="panel-header">
+          <div>
+            <h3>Recent Registrations</h3>
+            <p>New member registrations over the last seven days</p>
+          </div>
+        </div>
+
+        <div
+          *ngIf="dashboard.recentRegistrations.length === 0"
+          class="empty-message"
+        >
+          No registrations during this period.
+        </div>
+
+        <div
+          class="chart"
+          *ngIf="dashboard.recentRegistrations.length > 0"
+        >
+          <div
+            class="chart-column"
+            *ngFor="let item of dashboard.recentRegistrations"
+          >
+            <span class="chart-value">{{ item.registrations }}</span>
+
+            <div class="bar-area">
+              <div
+                class="bar"
+                [style.height.%]="getRegistrationHeight(item.registrations)"
+              ></div>
+            </div>
+
+            <span class="chart-label">
+              {{ item.registration_date | date: 'EEE' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel staff-panel">
+        <div class="panel-header">
+          <div>
+            <h3>Church Staff</h3>
+            <p>Active members assigned church roles</p>
+          </div>
+        </div>
+
+        <div *ngIf="dashboard.staff.length === 0" class="empty-message">
+          No staff role assignments found.
+        </div>
+
+        <div class="staff-list" *ngIf="dashboard.staff.length > 0">
+          <div class="staff-row" *ngFor="let staff of dashboard.staff">
+            <div>
+              <span class="role-name">
+                {{ staff.role_name | titlecase }}
+              </span>
+            </div>
+
+            <strong>{{ staff.member_count }}</strong>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="church-information">
+      <h3>Church Information</h3>
+
+      <div class="information-grid">
+        <div>
+          <span>Church Name</span>
+          <strong>{{ dashboard.church.church_name }}</strong>
+        </div>
+
+        <div>
+          <span>Church Code</span>
+          <strong>{{ dashboard.church.church_code }}</strong>
+        </div>
+
+        <div>
+          <span>Registration Date</span>
+          <strong>{{ dashboard.church.created_at | date: 'mediumDate' }}</strong>
+        </div>
+
+        <div>
+          <span>Church Status</span>
+          <strong>{{ dashboard.church.status | titlecase }}</strong>
+        </div>
+      </div>
+    </section>
+
+  </ng-container>
+</div>

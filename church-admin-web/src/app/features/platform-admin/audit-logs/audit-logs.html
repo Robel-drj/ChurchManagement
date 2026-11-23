@@ -1,0 +1,128 @@
+<div class="audit-page">
+  <div class="page-header">
+    <div>
+      <h1>Audit Logs</h1>
+      <p>Monitor activities and changes across the platform.</p>
+    </div>
+
+    <button class="refresh-btn" (click)="loadAuditLogs()" [disabled]="loading">
+      <span>↻</span>
+      Refresh
+    </button>
+  </div>
+
+  <div class="summary-card">
+    <div>
+      <span class="summary-label">Total Activities</span>
+      <h2>{{ total }}</h2>
+    </div>
+    <div class="summary-icon">☷</div>
+  </div>
+
+  <div class="filter-panel">
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="search"
+        (keyup.enter)="searchLogs()"
+        placeholder="Search action, user, church..."
+      />
+
+      <button (click)="searchLogs()" [disabled]="loading">
+        Search
+      </button>
+    </div>
+
+    <select
+      [(ngModel)]="selectedAction"
+      (ngModelChange)="filterByAction()"
+    >
+      <option value="">All Actions</option>
+      <option *ngFor="let action of actions" [value]="action.value">
+        {{ action.label }}
+      </option>
+    </select>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+    <button (click)="loadAuditLogs()">Try again</button>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Activity</th>
+          <th>Performed By</th>
+          <th>Church</th>
+          <th>IP Address</th>
+          <th>Date & Time</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngIf="loading">
+          <td colspan="6" class="state-cell">Loading audit logs...</td>
+        </tr>
+
+        <tr *ngIf="!loading && !errorMessage && logs.length === 0">
+          <td colspan="6" class="state-cell">No audit logs found.</td>
+        </tr>
+
+        <tr *ngFor="let log of logs; trackBy: trackById">
+          <td>
+            <span class="activity-badge">{{ formatAction(log.action) }}</span>
+          </td>
+
+          <td>{{ log.performed_by || 'Unknown user' }}</td>
+
+          <td>{{ log.church_name || 'Platform-wide' }}</td>
+
+          <td>{{ log.ip_address || '—' }}</td>
+
+          <td>{{ log.created_at | date: 'medium' }}</td>
+
+          <td>
+            <details class="details-dropdown">
+              <summary>View details</summary>
+              <pre>{{ formatDetails(log.details) }}</pre>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span>
+      Showing
+      {{ total === 0 ? 0 : offset + 1 }}–{{ offset + logs.length }}
+      of {{ total }} activities
+    </span>
+
+    <div class="pagination-controls">
+      <button
+        (click)="previousPage()"
+        [disabled]="loading || offset === 0"
+      >
+        Previous
+      </button>
+
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+
+      <button
+        (click)="nextPage()"
+        [disabled]="loading || offset + limit >= total"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+    <div class="bottom-actions">
+        <button type="button" class="secondary-button" (click)="goBack()">
+          Back to Dashboard
+        </button>
+      </div>
+</div>

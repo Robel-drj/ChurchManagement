@@ -1,0 +1,198 @@
+
+<div class="churches-page">
+
+  <header class="page-header">
+    <div>
+      <h1>Churches</h1>
+      <p>Manage all churches registered on the platform.</p>
+    </div>
+
+    <button class="primary-button" (click)="registerChurch()">
+      + Register Church
+    </button>
+  </header>
+
+  @if (errorMessage) {
+    <div class="alert error-alert">
+      {{ errorMessage }}
+    </div>
+  }
+
+  <section class="filters-card">
+
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="search"
+        placeholder="Search church name or code..."
+        (keyup.enter)="onSearch()"
+      />
+
+      <button class="search-button" (click)="onSearch()">
+        Search
+      </button>
+    </div>
+
+    <div class="filter-actions">
+      <select
+        [(ngModel)]="selectedStatus"
+        (ngModelChange)="onStatusChange()"
+      >
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="active">Active</option>
+        <option value="suspended">Suspended</option>
+      </select>
+
+      <button class="secondary-button" (click)="clearFilters()">
+        Clear filters
+      </button>
+    </div>
+
+  </section>
+
+  <section class="table-card">
+
+    <div class="table-heading">
+      <div>
+        <h2>Registered Churches</h2>
+        <p>Church records and registration information</p>
+      </div>
+
+      <button
+        class="refresh-button"
+        (click)="loadChurches()"
+        [disabled]="loading"
+      >
+        ↻ Refresh
+      </button>
+    </div>
+
+    @if (loading) {
+      <div class="loading-state">
+        Loading churches...
+      </div>
+    } @else if (churches.length === 0) {
+      <div class="empty-state">
+        <h3>No churches found</h3>
+        <p>Try changing your search or status filter.</p>
+      </div>
+    } @else {
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Church</th>
+              <th>Church Code</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Registered</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (church of churches; track church.id) {
+              <tr>
+                <td>
+                  <div class="church-name">
+                    <div class="church-avatar">
+                      {{ church.church_name.charAt(0).toUpperCase() }}
+                    </div>
+
+                    <strong>{{ church.church_name }}</strong>
+                  </div>
+                </td>
+
+                <td>
+                  <span class="church-code">
+                    {{ church.church_code }}
+                  </span>
+                </td>
+
+                <td>{{ church.phone || '—' }}</td>
+
+                <td>{{ church.email || '—' }}</td>
+
+                <td>
+                  <span
+                    class="status-badge"
+                    [ngClass]="getStatusClass(church.status)"
+                  >
+                    {{ church.status }}
+                  </span>
+                </td>
+
+                <td>
+                  {{ church.created_at | date:'mediumDate' }}
+                </td>
+
+                <td>
+                  <div class="action-buttons">
+
+                    <button
+                      class="view-button"
+                      (click)="viewChurch(church)"
+                    >
+                      View
+                    </button>
+
+                    @if (church.status === 'active') {
+                      <button
+                        class="suspend-button"
+                        (click)="changeChurchStatus(church)"
+                      >
+                        Suspend
+                      </button>
+                    } @else {
+                      <button
+                        class="activate-button"
+                        (click)="changeChurchStatus(church)"
+                      >
+                        Activate
+                      </button>
+                    }
+
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+    }
+
+    <div class="pagination">
+      <span>Page {{ currentPage }}</span>
+
+      <div>
+        <button
+          class="secondary-button"
+          (click)="previousPage()"
+          [disabled]="currentPage === 1 || loading"
+        >
+          Previous
+        </button>
+
+        <button
+          class="secondary-button"
+          (click)="nextPage()"
+          [disabled]="!hasNextPage || loading"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+     
+
+  </section>
+   <div class="bottom-actions">
+        <button type="button" class="secondary-button" (click)="goBack()">
+          Back to Dashboard
+        </button>
+      </div>
+
+</div>

@@ -1,0 +1,231 @@
+
+<div class="categories-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Contribution Categories</h1>
+      <p>Organize the different types of contributions received by your church.</p>
+    </div>
+
+    <button class="primary-btn" type="button" (click)="openCreateForm()">
+      + Add Category
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>{{ errorMessage }}</span>
+    <button type="button" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span>{{ successMessage }}</span>
+    <button type="button" (click)="successMessage = ''">×</button>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <span class="summary-icon">📂</span>
+      <div>
+        <p>Total Categories</p>
+        <strong>{{ categories.length }}</strong>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <span class="summary-icon active-icon">✓</span>
+      <div>
+        <p>Active Categories</p>
+        <strong>{{ activeCount }}</strong>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <span class="summary-icon inactive-icon">○</span>
+      <div>
+        <p>Inactive Categories</p>
+        <strong>{{ inactiveCount }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <section class="categories-card">
+
+    <div class="toolbar">
+      <div>
+        <h2>All Categories</h2>
+        <p>Manage your church contribution categories.</p>
+      </div>
+
+      <div class="filters">
+        <input
+          type="search"
+          name="categorySearch"
+          [(ngModel)]="searchTerm"
+          placeholder="Search categories..."
+        />
+
+        <select name="statusFilter" [(ngModel)]="statusFilter">
+          <option value="all">All categories</option>
+          <option value="active">Active only</option>
+          <option value="inactive">Inactive only</option>
+        </select>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      Loading categories...
+    </div>
+
+    <div
+      *ngIf="!loading && filteredCategories.length === 0"
+      class="empty-state"
+    >
+      <div class="empty-icon">📂</div>
+      <h3>No categories found</h3>
+      <p>Create a category to organize your church contributions.</p>
+      <button class="primary-btn" type="button" (click)="openCreateForm()">
+        Add Category
+      </button>
+    </div>
+
+    <div
+      *ngIf="!loading && filteredCategories.length > 0"
+      class="table-wrapper"
+    >
+      <table>
+        <thead>
+          <tr>
+            <th>Category Name</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let category of filteredCategories">
+            <td>
+              <strong>{{ category.name }}</strong>
+            </td>
+
+            <td class="description-cell">
+              {{ category.description || 'No description' }}
+            </td>
+
+            <td>
+              <span
+                class="status-badge"
+                [class.active]="category.is_active"
+                [class.inactive]="!category.is_active"
+              >
+                {{ category.is_active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+
+            <td>
+              <div class="actions">
+                <button
+                  class="edit-btn"
+                  type="button"
+                  (click)="openEditForm(category)"
+                >
+                  Edit
+                </button>
+
+                <button
+                  *ngIf="category.is_active"
+                  class="deactivate-btn"
+                  type="button"
+                  (click)="toggleCategory(category)"
+                >
+                  Deactivate
+                </button>
+
+                <button
+                  *ngIf="!category.is_active"
+                  class="activate-btn"
+                  type="button"
+                  (click)="toggleCategory(category)"
+                >
+                  Activate
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+</div>
+
+<!-- CREATE / EDIT CATEGORY MODAL -->
+<div
+  class="modal-backdrop"
+  *ngIf="showForm"
+  (click)="closeForm()"
+>
+  <section class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2>{{ editingCategory ? 'Edit Category' : 'Add Category' }}</h2>
+        <p>
+          {{ editingCategory ? 'Update this contribution category.' : 'Create a new contribution category.' }}
+        </p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeForm()">
+        ×
+      </button>
+    </div>
+
+    <form (ngSubmit)="saveCategory()">
+
+      <div class="form-group">
+        <label>Category Name *</label>
+        <input
+          type="text"
+          name="name"
+          [(ngModel)]="form.name"
+          required
+          minlength="2"
+          maxlength="100"
+          placeholder="Example: Sunday Offering"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea
+          name="description"
+          [(ngModel)]="form.description"
+          rows="4"
+          maxlength="1000"
+          placeholder="Describe this contribution category..."
+        ></textarea>
+      </div>
+
+      <div class="form-note">
+        Categories used by existing contributions should be deactivated
+        rather than deleted.
+      </div>
+
+      <div class="modal-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeForm()"
+          [disabled]="saving"
+        >
+          Cancel
+        </button>
+
+        <button class="primary-btn" type="submit" [disabled]="saving">
+          {{ saving ? 'Saving...' : (editingCategory ? 'Save Changes' : 'Create Category') }}
+        </button>
+      </div>
+
+    </form>
+  </section>
+</div>

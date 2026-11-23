@@ -1,0 +1,516 @@
+
+<div class="members-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Members Management</h1>
+      <p>Manage your church members and their membership records.</p>
+    </div>
+
+    <button class="primary-btn" type="button" (click)="openRegisterForm()">
+      <span>＋</span> Register Member
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    {{ errorMessage }}
+    <button type="button" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+    <button type="button" (click)="successMessage = ''">×</button>
+  </div>
+
+  <div class="summary-card">
+    <div class="summary-icon">👥</div>
+    <div>
+      <span>Total members</span>
+      <strong>{{ totalMembers }}</strong>
+    </div>
+  </div>
+
+  <section class="members-card">
+
+    <div class="table-toolbar">
+      <div>
+        <h2>Church Members</h2>
+        <p>Search and manage registered members.</p>
+      </div>
+
+      <div class="search-box">
+        <input
+          type="text"
+          name="memberSearch"
+          [(ngModel)]="searchTerm"
+          placeholder="Search name, phone, email or member number"
+          (keyup.enter)="searchMembers()"
+        />
+
+        <button type="button" (click)="searchMembers()">Search</button>
+
+        <button
+          *ngIf="searchTerm"
+          class="clear-btn"
+          type="button"
+          (click)="clearSearch()"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      Loading members...
+    </div>
+
+    <div *ngIf="!loading && members.length === 0" class="empty-state">
+      <div class="empty-icon">👥</div>
+      <h3>No members found</h3>
+      <p>
+        No members match your search. You can register a new member or try
+        another search.
+      </p>
+      <button class="primary-btn" type="button" (click)="openRegisterForm()">
+        Register Member
+      </button>
+    </div>
+
+    <div *ngIf="!loading && members.length > 0" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Member Number</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Joined</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let member of members">
+            <td>
+              <div class="member-cell">
+                <div class="avatar">
+                  {{ member.full_name.charAt(0).toUpperCase() }}
+                </div>
+                <div>
+                  <strong>{{ member.full_name }}</strong>
+                  <small>{{ member.roles.join(', ') || 'Member' }}</small>
+                </div>
+              </div>
+            </td>
+
+            <td>{{ member.member_number || '—' }}</td>
+            <td>{{ member.phone }}</td>
+            <td>{{ member.email || '—' }}</td>
+            <td>{{ member.joined_at | date:'mediumDate' }}</td>
+
+            <td>
+              <span class="status-badge" [ngClass]="getStatusClass(member.membership_status)">
+                {{ member.membership_status }}
+              </span>
+            </td>
+
+            <td>
+              <div class="action-buttons">
+                <button
+                  class="view-btn"
+                  type="button"
+                  (click)="openMemberDetails(member)"
+                >
+                  View
+                </button>
+
+                <button
+                  *ngIf="member.membership_status === 'active'"
+                  class="suspend-btn"
+                  type="button"
+                  (click)="toggleMembershipStatus(member)"
+                >
+                  Suspend
+                </button>
+
+                <button
+                  *ngIf="member.membership_status === 'suspended'"
+                  class="activate-btn"
+                  type="button"
+                  (click)="toggleMembershipStatus(member)"
+                >
+                  Activate
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div
+      *ngIf="!loading && totalPages > 1"
+      class="pagination"
+    >
+      <span>
+        Page {{ currentPage }} of {{ totalPages }}
+      </span>
+
+      <div class="pagination-buttons">
+        <button
+          type="button"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+        >
+          Previous
+        </button>
+
+        <button
+          *ngFor="let page of getPageNumbers()"
+          type="button"
+          [class.current-page]="page === currentPage"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          type="button"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<!-- REGISTER MEMBER MODAL -->
+<div
+  class="modal-backdrop"
+  *ngIf="showRegisterForm"
+  (click)="closeRegisterForm()"
+>
+  <section class="modal modal-large" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2>Register New Member</h2>
+        <p>Create a church membership and member profile.</p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeRegisterForm()">
+        ×
+      </button>
+    </div>
+
+    <form (ngSubmit)="registerMember()">
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input
+            type="text"
+            name="full_name"
+            [(ngModel)]="registerData.full_name"
+            required
+            minlength="2"
+            maxlength="150"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number *</label>
+          <input
+            type="tel"
+            name="phone"
+            [(ngModel)]="registerData.phone"
+            required
+            minlength="7"
+            maxlength="20"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Email Address</label>
+          <input
+            type="email"
+            name="email"
+            [(ngModel)]="registerData.email"
+            maxlength="150"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Gender</label>
+          <select name="gender" [(ngModel)]="registerData.gender">
+            <option value="">Select gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Date of Birth</label>
+          <input
+            type="date"
+            name="date_of_birth"
+            [(ngModel)]="registerData.date_of_birth"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Emergency Contact</label>
+          <input
+            type="tel"
+            name="emergency_contact"
+            [(ngModel)]="registerData.emergency_contact"
+            maxlength="20"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label>Address</label>
+          <textarea
+            name="address"
+            [(ngModel)]="registerData.address"
+            rows="2"
+            maxlength="1000"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Account Password *</label>
+          <input
+            type="password"
+            name="password"
+            [(ngModel)]="registerData.password"
+            required
+            minlength="8"
+            maxlength="72"
+            autocomplete="new-password"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Confirm Password *</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            [(ngModel)]="registerData.confirmPassword"
+            required
+            autocomplete="new-password"
+          />
+        </div>
+      </div>
+
+      <div class="form-note">
+        If this phone number already belongs to an account, the account
+        owner's current password and matching account details are required.
+      </div>
+
+      <div class="modal-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeRegisterForm()"
+          [disabled]="saving"
+        >
+          Cancel
+        </button>
+
+        <button class="primary-btn" type="submit" [disabled]="saving">
+          {{ saving ? 'Registering...' : 'Register Member' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
+
+<!-- MEMBER DETAILS MODAL -->
+<div
+  class="modal-backdrop"
+  *ngIf="showDetailsModal"
+  (click)="closeMemberDetails()"
+>
+  <section class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2>Member Details</h2>
+        <p>Membership and profile information.</p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeMemberDetails()">
+        ×
+      </button>
+    </div>
+
+    <div *ngIf="detailsLoading" class="loading-state">
+      Loading member details...
+    </div>
+
+    <div *ngIf="selectedMember && !detailsLoading">
+
+      <div class="profile-heading">
+        <div class="large-avatar">
+          {{ selectedMember.full_name.charAt(0).toUpperCase() }}
+        </div>
+
+        <div>
+          <h3>{{ selectedMember.full_name }}</h3>
+          <span
+            class="status-badge"
+            [ngClass]="getStatusClass(selectedMember.membership_status)"
+          >
+            {{ selectedMember.membership_status }}
+          </span>
+        </div>
+      </div>
+
+      <div class="details-grid">
+        <div>
+          <span>Member Number</span>
+          <strong>{{ selectedMember.member_number || '—' }}</strong>
+        </div>
+
+        <div>
+          <span>Phone</span>
+          <strong>{{ selectedMember.phone }}</strong>
+        </div>
+
+        <div>
+          <span>Email</span>
+          <strong>{{ selectedMember.email || '—' }}</strong>
+        </div>
+
+        <div>
+          <span>Account Status</span>
+          <strong>{{ selectedMember.account_status || '—' }}</strong>
+        </div>
+
+        <div>
+          <span>Gender</span>
+          <strong>{{ selectedMember.gender || '—' }}</strong>
+        </div>
+
+        <div>
+          <span>Date of Birth</span>
+          <strong>
+            {{ selectedMember.date_of_birth ? (selectedMember.date_of_birth | date:'mediumDate') : '—' }}
+          </strong>
+        </div>
+
+        <div>
+          <span>Emergency Contact</span>
+          <strong>{{ selectedMember.emergency_contact || '—' }}</strong>
+        </div>
+
+        <div>
+          <span>Joined</span>
+          <strong>{{ selectedMember.joined_at | date:'mediumDate' }}</strong>
+        </div>
+
+        <div class="full-width">
+          <span>Address</span>
+          <strong>{{ selectedMember.address || '—' }}</strong>
+        </div>
+
+        <div class="full-width">
+          <span>Church Roles</span>
+          <strong>{{ selectedMember.roles.join(', ') || 'Member' }}</strong>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeMemberDetails()"
+        >
+          Close
+        </button>
+
+        <button
+          class="primary-btn"
+          type="button"
+          *ngIf="!showEditForm"
+          (click)="openEditForm()"
+        >
+          Edit Profile
+        </button>
+      </div>
+
+      <!-- EDIT PROFILE FORM -->
+      <div *ngIf="showEditForm" class="edit-section">
+        <h3>Edit Member Profile</h3>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Gender</label>
+            <select name="editGender" [(ngModel)]="editData.gender">
+              <option value="">Not specified</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Date of Birth</label>
+            <input
+              type="date"
+              name="editDateOfBirth"
+              [(ngModel)]="editData.date_of_birth"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Emergency Contact</label>
+            <input
+              type="tel"
+              name="editEmergencyContact"
+              [(ngModel)]="editData.emergency_contact"
+              maxlength="20"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Address</label>
+            <textarea
+              name="editAddress"
+              [(ngModel)]="editData.address"
+              rows="2"
+              maxlength="1000"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button
+            class="secondary-btn"
+            type="button"
+            (click)="closeEditForm()"
+            [disabled]="saving"
+          >
+            Cancel
+          </button>
+
+          <button
+            class="primary-btn"
+            type="button"
+            (click)="updateMemberProfile()"
+            [disabled]="saving"
+          >
+            {{ saving ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>

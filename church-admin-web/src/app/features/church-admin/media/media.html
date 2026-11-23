@@ -1,0 +1,225 @@
+
+<div class="media-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Media Library</h1>
+      <p>Browse images and videos from your church posts and events.</p>
+    </div>
+
+    <div class="media-total">
+      {{ total }} media files
+    </div>
+  </div>
+
+  <div class="error-message" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="filter-card">
+
+    <div class="search-field">
+      <input
+        type="text"
+        [(ngModel)]="search"
+        placeholder="Search filenames or post/event titles..."
+        (keyup.enter)="applyFilters()"/>
+    </div>
+
+    <div class="filter-field">
+      <select [(ngModel)]="sourceFilter">
+        <option value="all">All sources</option>
+        <option value="post">Posts</option>
+        <option value="event">Events</option>
+      </select>
+    </div>
+
+    <div class="filter-field">
+      <select [(ngModel)]="mediaTypeFilter">
+        <option value="">All media</option>
+        <option value="image">Images</option>
+        <option value="video">Videos</option>
+      </select>
+    </div>
+
+    <button class="primary-btn" (click)="applyFilters()">
+      Search
+    </button>
+
+    <button class="secondary-btn" (click)="resetFilters()">
+      Reset
+    </button>
+
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    Loading media...
+  </div>
+
+  <div class="empty-state"
+       *ngIf="!loading && media.length === 0">
+
+    <div class="empty-icon">🖼️</div>
+    <h3>No media found</h3>
+    <p>Uploaded post and event images or videos will appear here.</p>
+
+  </div>
+
+  <div class="media-grid" *ngIf="!loading && media.length > 0">
+
+    <div class="media-card"
+         *ngFor="let item of media; trackBy: trackByMedia">
+
+      <div class="media-preview"
+           (click)="openPreview(item)">
+
+        <img
+          *ngIf="item.media_type === 'image'"
+          [src]="item.media_url"
+          [alt]="item.file_name"
+          loading="lazy"/>
+
+        <div class="video-preview"
+             *ngIf="item.media_type === 'video'">
+
+          <video
+            [src]="item.media_url"
+            preload="metadata"
+            muted>
+          </video>
+
+          <div class="play-overlay">
+            ▶
+          </div>
+        </div>
+
+        <div class="media-type">
+          {{ item.media_type }}
+        </div>
+
+      </div>
+
+      <div class="media-info">
+
+        <h3 [title]="item.file_name">
+          {{ item.file_name || 'Untitled media' }}
+        </h3>
+
+        <div class="media-meta">
+          {{ formatFileSize(item.file_size) }}
+          ·
+          {{ item.mime_type }}
+        </div>
+
+        <div class="media-source">
+          <span class="source-badge">
+            {{ item.source }}
+          </span>
+
+          <span class="parent-title"
+                *ngIf="item.parent_title"
+                [title]="item.parent_title">
+            {{ item.parent_title }}
+          </span>
+        </div>
+
+        <div class="media-date">
+          {{ item.created_at | date:'mediumDate' }}
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="pagination"
+       *ngIf="!loading && totalPages > 1">
+
+    <button
+      class="secondary-btn"
+      [disabled]="page <= 1"
+      (click)="previousPage()">
+      Previous
+    </button>
+
+    <span>Page {{ page }} of {{ totalPages }}</span>
+
+    <button
+      class="secondary-btn"
+      [disabled]="page >= totalPages"
+      (click)="nextPage()">
+      Next
+    </button>
+
+  </div>
+
+  <!-- MEDIA PREVIEW MODAL -->
+
+  <div class="preview-overlay"
+       *ngIf="selectedMedia"
+       (click)="closePreview()">
+
+    <div class="preview-modal"
+         (click)="$event.stopPropagation()">
+
+      <div class="preview-header">
+
+        <div>
+          <h2>{{ selectedMedia.file_name }}</h2>
+          <p>
+            {{ selectedMedia.source }}
+            <span *ngIf="selectedMedia.parent_title">
+              · {{ selectedMedia.parent_title }}
+            </span>
+          </p>
+        </div>
+
+        <button class="close-btn"
+                (click)="closePreview()">
+          ×
+        </button>
+
+      </div>
+
+      <div class="preview-body">
+
+        <img
+          *ngIf="selectedMedia.media_type === 'image'"
+          [src]="selectedMedia.media_url"
+          [alt]="selectedMedia.file_name"/>
+
+        <video
+          *ngIf="selectedMedia.media_type === 'video'"
+          [src]="selectedMedia.media_url"
+          controls
+          autoplay
+          playsinline>
+        </video>
+
+      </div>
+
+      <div class="preview-footer">
+
+        <div>
+          <strong>File size</strong>
+          <span>{{ formatFileSize(selectedMedia.file_size) }}</span>
+        </div>
+
+        <div>
+          <strong>Uploaded</strong>
+          <span>{{ selectedMedia.created_at | date:'medium' }}</span>
+        </div>
+
+        <div>
+          <strong>Type</strong>
+          <span>{{ selectedMedia.mime_type }}</span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,232 @@
+
+<div class="payment-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Payment Methods</h1>
+      <p>Manage the payment methods your church accepts.</p>
+    </div>
+
+    <button class="primary-btn" type="button" (click)="openCreateForm()">
+      + Add Payment Method
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>{{ errorMessage }}</span>
+    <button type="button" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span>{{ successMessage }}</span>
+    <button type="button" (click)="successMessage = ''">×</button>
+  </div>
+
+  <div class="info-banner">
+    <strong>Payment information:</strong>
+    Keep account details accurate. Members and authorized finance staff may
+    use this information when making or recording contributions.
+  </div>
+
+  <section class="methods-card">
+
+    <div class="toolbar">
+      <div>
+        <h2>Active Payment Methods</h2>
+        <p>{{ paymentMethods.length }} active method(s)</p>
+      </div>
+
+      <input
+        type="search"
+        name="methodSearch"
+        [(ngModel)]="searchTerm"
+        placeholder="Search payment methods..."
+      />
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      Loading payment methods...
+    </div>
+
+    <div
+      *ngIf="!loading && filteredMethods.length === 0"
+      class="empty-state"
+    >
+      <div class="empty-icon">💳</div>
+      <h3>No payment methods found</h3>
+      <p>Create a payment method to start recording contributions.</p>
+
+      <button
+        class="primary-btn"
+        type="button"
+        (click)="openCreateForm()"
+      >
+        Add Payment Method
+      </button>
+    </div>
+
+    <div
+      *ngIf="!loading && filteredMethods.length > 0"
+      class="methods-grid"
+    >
+      <article class="method-card" *ngFor="let method of filteredMethods">
+
+        <div class="method-card-header">
+          <div class="method-icon">💳</div>
+
+          <span class="status-badge">
+            Active
+          </span>
+        </div>
+
+        <h3>{{ method.method_name }}</h3>
+
+        <div class="method-details">
+          <div *ngIf="method.provider">
+            <span>Provider</span>
+            <strong>{{ method.provider }}</strong>
+          </div>
+
+          <div *ngIf="method.account_name">
+            <span>Account Name</span>
+            <strong>{{ method.account_name }}</strong>
+          </div>
+
+          <div *ngIf="method.account_number">
+            <span>Account Number</span>
+            <strong>{{ method.account_number }}</strong>
+          </div>
+
+          <div *ngIf="method.instructions">
+            <span>Instructions</span>
+            <p>{{ method.instructions }}</p>
+          </div>
+        </div>
+
+        <div class="method-actions">
+          <button
+            class="edit-btn"
+            type="button"
+            (click)="openEditForm(method)"
+          >
+            Edit
+          </button>
+
+          <button
+            class="deactivate-btn"
+            type="button"
+            (click)="deactivateMethod(method)"
+          >
+            Deactivate
+          </button>
+        </div>
+
+      </article>
+    </div>
+
+  </section>
+</div>
+
+<!-- CREATE / EDIT PAYMENT METHOD MODAL -->
+<div
+  class="modal-backdrop"
+  *ngIf="showForm"
+  (click)="closeForm()"
+>
+  <section class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2>
+          {{ editingMethod ? 'Edit Payment Method' : 'Add Payment Method' }}
+        </h2>
+        <p>
+          Enter the payment method information.
+        </p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeForm()">
+        ×
+      </button>
+    </div>
+
+    <form (ngSubmit)="savePaymentMethod()">
+
+      <div class="form-group">
+        <label>Payment Method Name *</label>
+        <input
+          type="text"
+          name="method_name"
+          [(ngModel)]="form.method_name"
+          required
+          minlength="2"
+          maxlength="100"
+          placeholder="Example: Bank Transfer"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Provider</label>
+        <input
+          type="text"
+          name="provider"
+          [(ngModel)]="form.provider"
+          maxlength="150"
+          placeholder="Example: Commercial Bank"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Account Name</label>
+        <input
+          type="text"
+          name="account_name"
+          [(ngModel)]="form.account_name"
+          maxlength="150"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Account Number</label>
+        <input
+          type="text"
+          name="account_number"
+          [(ngModel)]="form.account_number"
+          maxlength="100"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Payment Instructions</label>
+        <textarea
+          name="instructions"
+          [(ngModel)]="form.instructions"
+          rows="4"
+          maxlength="2000"
+          placeholder="Explain how this payment method should be used..."
+        ></textarea>
+      </div>
+
+      <div class="form-note">
+        Only enter payment information that your church is authorized to
+        publish and use.
+      </div>
+
+      <div class="modal-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeForm()"
+          [disabled]="saving"
+        >
+          Cancel
+        </button>
+
+        <button class="primary-btn" type="submit" [disabled]="saving">
+          {{ saving ? 'Saving...' : (editingMethod ? 'Save Changes' : 'Create Method') }}
+        </button>
+      </div>
+
+    </form>
+  </section>
+</div>

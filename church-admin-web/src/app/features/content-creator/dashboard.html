@@ -1,0 +1,129 @@
+<div class="content-dashboard">
+
+  <div class="page-header">
+    <div>
+      <h1>Content Creator Dashboard</h1>
+      <p>Manage church announcements, posts and events.</p>
+    </div>
+
+    <button
+      class="refresh-btn"
+      type="button"
+      (click)="loadDashboard()"
+      [disabled]="loading">
+      <span>↻</span> Refresh
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    Loading content dashboard...
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <div class="stats-grid">
+
+      <div class="stat-card">
+        <div class="stat-icon total">▤</div>
+        <div>
+          <span class="stat-label">Total Posts</span>
+          <h2>{{ totalPosts }}</h2>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon published">✓</div>
+        <div>
+          <span class="stat-label">Published</span>
+          <h2>{{ publishedPosts }}</h2>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon draft">✎</div>
+        <div>
+          <span class="stat-label">Drafts</span>
+          <h2>{{ draftPosts }}</h2>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon archived">▣</div>
+        <div>
+          <span class="stat-label">Archived</span>
+          <h2>{{ archivedPosts }}</h2>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="quick-actions">
+      <h2>Quick Actions</h2>
+
+      <div class="action-grid">
+
+        <a routerLink="/content-creator/posts" class="action-card">
+          <span class="action-icon">✎</span>
+          <h3>Create Post</h3>
+          <p>Create an announcement, news article or teaching.</p>
+        </a>
+
+        <a routerLink="/content-creator/events" class="action-card">
+          <span class="action-icon">▦</span>
+          <h3>Manage Events</h3>
+          <p>Create and manage church events.</p>
+        </a>
+
+        <a routerLink="/content-creator/media" class="action-card">
+          <span class="action-icon">▧</span>
+          <h3>Media Library</h3>
+          <p>Manage images and videos used in church content.</p>
+        </a>
+
+      </div>
+    </div>
+
+    <div class="recent-posts">
+      <div class="section-header">
+        <h2>Recent Posts</h2>
+        <a routerLink="/content-creator/posts">View All</a>
+      </div>
+
+      <div *ngIf="recentPosts.length === 0" class="empty-state">
+        <p>No posts have been created yet.</p>
+        <a routerLink="/content-creator/posts">Create your first post</a>
+      </div>
+
+      <div class="table-wrapper" *ngIf="recentPosts.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let post of recentPosts">
+              <td>{{ post.title }}</td>
+              <td>{{ post.post_type }}</td>
+              <td>
+                <span class="status" [ngClass]="post.status">
+                  {{ post.status }}
+                </span>
+              </td>
+              <td>{{ post.created_at | date:'mediumDate' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </ng-container>
+</div>

@@ -1,0 +1,371 @@
+
+<div class="reports-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Church Reports</h1>
+      <p>{{ churchName || 'Church' }} — Membership and financial reporting</p>
+    </div>
+
+    <button
+      class="export-btn"
+      *ngIf="activeTab === 'membership'"
+      (click)="exportCsv()"
+      [disabled]="loadingMembers || members.length === 0">
+      ↓ Export Members CSV
+    </button>
+  </div>
+
+  <!-- REPORT TABS -->
+
+  <div class="report-tabs">
+    <button
+      [class.active]="activeTab === 'membership'"
+      (click)="setTab('membership')">
+      <span>👥</span> Membership Report
+    </button>
+
+    <button
+      [class.active]="activeTab === 'financial'"
+      (click)="setTab('financial')">
+      <span>💰</span> Financial Report
+    </button>
+  </div>
+
+  <!-- MEMBERSHIP REPORT -->
+
+  <section *ngIf="activeTab === 'membership'">
+
+    <div class="error-message" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+
+    <div class="summary-grid">
+
+      <div class="summary-card total-card">
+        <div class="card-label">Total Members</div>
+        <h2>{{ totalMembers }}</h2>
+        <p>Membership records</p>
+      </div>
+
+      <div class="summary-card active-card">
+        <div class="card-label">Active Members</div>
+        <h2>{{ activeMembers }}</h2>
+        <p>Active memberships</p>
+      </div>
+
+      <div class="summary-card pending-card">
+        <div class="card-label">Pending Members</div>
+        <h2>{{ pendingMembers }}</h2>
+        <p>Awaiting membership status</p>
+      </div>
+
+      <div class="summary-card suspended-card">
+        <div class="card-label">Suspended Members</div>
+        <h2>{{ suspendedMembers }}</h2>
+        <p>Suspended memberships</p>
+      </div>
+
+    </div>
+
+    <div class="report-card">
+
+      <div class="report-header">
+        <div>
+          <h2>Membership Register</h2>
+          <p>Church membership records</p>
+        </div>
+      </div>
+
+      <div class="search-bar">
+
+        <input
+          type="text"
+          [(ngModel)]="search"
+          placeholder="Search name, phone or member number..."
+          (keyup.enter)="loadMembershipReport()"/>
+
+        <button class="primary-btn" (click)="loadMembershipReport()">
+          Search
+        </button>
+
+        <button class="secondary-btn" (click)="resetMemberSearch()">
+          Reset
+        </button>
+
+      </div>
+
+      <div class="loading-state" *ngIf="loadingMembers">
+        Loading membership report...
+      </div>
+
+      <div class="empty-state"
+           *ngIf="!loadingMembers && members.length === 0">
+        <h3>No membership records found</h3>
+        <p>Try changing your search.</p>
+      </div>
+
+      <div class="table-wrapper"
+           *ngIf="!loadingMembers && members.length > 0">
+
+        <table>
+          <thead>
+            <tr>
+              <th>Member Number</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Joined</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let member of members; trackBy: trackByMember">
+
+              <td>{{ member.member_number || '—' }}</td>
+              <td class="member-name">{{ member.full_name }}</td>
+              <td>{{ member.phone }}</td>
+              <td>{{ member.email || '—' }}</td>
+
+              <td>
+                <span
+                  class="status-badge"
+                  [ngClass]="'status-' + member.membership_status">
+                  {{ member.membership_status }}
+                </span>
+              </td>
+
+              <td>{{ member.joined_at | date:'mediumDate' }}</td>
+
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+
+      <div class="report-footer"
+           *ngIf="!loadingMembers && members.length > 0">
+        Showing {{ members.length }} membership records.
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- FINANCIAL REPORT -->
+
+  <section *ngIf="activeTab === 'financial'">
+
+    <div class="error-message" *ngIf="financeErrorMessage">
+      {{ financeErrorMessage }}
+    </div>
+
+    <div class="date-filter">
+
+      <div class="date-field">
+        <label>From</label>
+        <input type="date" [(ngModel)]="dateFrom"/>
+      </div>
+
+      <div class="date-field">
+        <label>To</label>
+        <input type="date" [(ngModel)]="dateTo"/>
+      </div>
+
+      <button
+        class="primary-btn"
+        (click)="loadFinancialReport()"
+        [disabled]="loadingFinance">
+        Generate Report
+      </button>
+
+      <button
+        class="secondary-btn"
+        (click)="resetFinanceDates()"
+        [disabled]="loadingFinance">
+        This Month
+      </button>
+
+    </div>
+
+    <div class="loading-state" *ngIf="loadingFinance">
+      Generating financial report...
+    </div>
+
+    <div *ngIf="!loadingFinance && financialReport">
+
+      <div class="summary-grid">
+
+        <div class="summary-card collected-card">
+          <div class="card-label">Confirmed Contributions</div>
+          <h2>{{ formatAmount(financialReport.totals.confirmed_amount) }}</h2>
+          <p>{{ financialReport.totals.confirmed_count }} confirmed</p>
+        </div>
+
+        <div class="summary-card pending-card">
+          <div class="card-label">Pending Contributions</div>
+          <h2>{{ formatAmount(financialReport.totals.pending_amount) }}</h2>
+          <p>{{ financialReport.totals.pending_count }} pending</p>
+        </div>
+
+        <div class="summary-card rejected-card">
+          <div class="card-label">Rejected</div>
+          <h2>{{ formatAmount(financialReport.totals.rejected_amount) }}</h2>
+          <p>{{ financialReport.totals.rejected_count }} rejected</p>
+        </div>
+
+        <div class="summary-card reversed-card">
+          <div class="card-label">Reversed</div>
+          <h2>{{ formatAmount(financialReport.totals.reversed_amount) }}</h2>
+          <p>{{ financialReport.totals.reversed_count }} reversed</p>
+        </div>
+
+      </div>
+
+      <div class="report-grid">
+
+        <!-- BY CATEGORY -->
+
+        <div class="report-card">
+
+          <div class="report-header">
+            <div>
+              <h2>Contributions by Category</h2>
+              <p>Collection breakdown by contribution category</p>
+            </div>
+          </div>
+
+          <div class="table-wrapper"
+               *ngIf="financialReport.by_category.length">
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Transactions</th>
+                  <th>Confirmed</th>
+                  <th>Pending</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let category of financialReport.by_category">
+                  <td>{{ category.category_name }}</td>
+                  <td>{{ category.contribution_count }}</td>
+                  <td class="amount">
+                    {{ formatAmount(category.confirmed_amount) }}
+                  </td>
+                  <td class="pending-amount">
+                    {{ formatAmount(category.pending_amount) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+          </div>
+
+          <div class="empty-report"
+               *ngIf="!financialReport.by_category.length">
+            No category data for this period.
+          </div>
+
+        </div>
+
+        <!-- BY PAYMENT METHOD -->
+
+        <div class="report-card">
+
+          <div class="report-header">
+            <div>
+              <h2>Payment Methods</h2>
+              <p>Collections grouped by payment method</p>
+            </div>
+          </div>
+
+          <div class="table-wrapper"
+               *ngIf="financialReport.by_payment_method.length">
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Transactions</th>
+                  <th>Confirmed</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let method of financialReport.by_payment_method">
+                  <td>{{ method.method_name }}</td>
+                  <td>{{ method.contribution_count }}</td>
+                  <td class="amount">
+                    {{ formatAmount(method.confirmed_amount) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+          </div>
+
+          <div class="empty-report"
+               *ngIf="!financialReport.by_payment_method.length">
+            No payment method data for this period.
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- DAILY ACTIVITY -->
+
+      <div class="report-card daily-card">
+
+        <div class="report-header">
+          <div>
+            <h2>Daily Collection Activity</h2>
+            <p>Daily contributions within the selected period</p>
+          </div>
+        </div>
+
+        <div class="table-wrapper"
+             *ngIf="financialReport.daily_activity.length">
+
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Transactions</th>
+                <th>Confirmed Amount</th>
+                <th>Pending Amount</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let day of financialReport.daily_activity">
+                <td>{{ day.contribution_day | date:'mediumDate' }}</td>
+                <td>{{ day.contribution_count }}</td>
+                <td class="amount">
+                  {{ formatAmount(day.confirmed_amount) }}
+                </td>
+                <td class="pending-amount">
+                  {{ formatAmount(day.pending_amount) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+        </div>
+
+        <div class="empty-report"
+             *ngIf="!financialReport.daily_activity.length">
+          No daily collection activity.
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+</div>

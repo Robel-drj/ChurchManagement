@@ -1,0 +1,254 @@
+
+<div class="money-dashboard">
+
+  <div class="dashboard-header">
+    <div>
+      <h1>Finance Dashboard</h1>
+      <p>{{ churchName || 'Church' }} — Financial overview</p>
+    </div>
+
+    <button class="refresh-btn"
+            (click)="loadDashboard()"
+            [disabled]="loading">
+      ↻ Refresh
+    </button>
+  </div>
+
+  <div class="error-message" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="date-filter">
+
+    <div class="date-field">
+      <label>From</label>
+      <input type="date" [(ngModel)]="dateFrom"/>
+    </div>
+
+    <div class="date-field">
+      <label>To</label>
+      <input type="date" [(ngModel)]="dateTo"/>
+    </div>
+
+    <button class="primary-btn"
+            (click)="loadDashboard()"
+            [disabled]="loading">
+      Apply
+    </button>
+
+    <button class="secondary-btn"
+            (click)="resetDateRange()"
+            [disabled]="loading">
+      This Month
+    </button>
+
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    Loading financial summary...
+  </div>
+
+  <div *ngIf="!loading && report">
+
+    <div class="summary-grid">
+
+      <div class="summary-card collected-card">
+        <div class="summary-top">
+          <span>Total Collected</span>
+          <span class="card-icon">💰</span>
+        </div>
+
+        <h2>{{ formatAmount(totalCollected) }}</h2>
+
+        <p>{{ confirmedCount }} confirmed contribution(s)</p>
+      </div>
+
+      <div class="summary-card pending-card">
+        <div class="summary-top">
+          <span>Pending Amount</span>
+          <span class="card-icon">⏳</span>
+        </div>
+
+        <h2>{{ formatAmount(pendingAmount) }}</h2>
+
+        <p>{{ pendingCount }} pending contribution(s)</p>
+      </div>
+
+      <div class="summary-card transactions-card">
+        <div class="summary-top">
+          <span>All Transactions</span>
+          <span class="card-icon">🧾</span>
+        </div>
+
+        <h2>{{ totalTransactions }}</h2>
+
+        <p>Contributions in selected period</p>
+      </div>
+
+      <div class="summary-card confirmed-card">
+        <div class="summary-top">
+          <span>Confirmed</span>
+          <span class="card-icon">✓</span>
+        </div>
+
+        <h2>{{ confirmedCount }}</h2>
+
+        <p>Successfully confirmed</p>
+      </div>
+
+    </div>
+
+    <div class="report-grid">
+
+      <!-- CATEGORY REPORT -->
+
+      <div class="report-card">
+
+        <div class="report-header">
+          <h2>Contributions by Category</h2>
+          <span>{{ report.by_category.length }} categories</span>
+        </div>
+
+        <div class="table-wrapper"
+             *ngIf="report.by_category.length > 0">
+
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Transactions</th>
+                <th>Collected</th>
+                <th>Pending</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let category of report.by_category">
+
+                <td>{{ category.category_name }}</td>
+
+                <td>{{ category.contribution_count }}</td>
+
+                <td class="amount">
+                  {{ formatAmount(category.confirmed_amount) }}
+                </td>
+
+                <td class="pending-amount">
+                  {{ formatAmount(category.pending_amount) }}
+                </td>
+
+              </tr>
+            </tbody>
+          </table>
+
+        </div>
+
+        <div class="empty-report"
+             *ngIf="report.by_category.length === 0">
+          No category data for this period.
+        </div>
+
+      </div>
+
+      <!-- PAYMENT METHOD REPORT -->
+
+      <div class="report-card">
+
+        <div class="report-header">
+          <h2>Payment Methods</h2>
+          <span>{{ report.by_payment_method.length }} methods</span>
+        </div>
+
+        <div class="table-wrapper"
+             *ngIf="report.by_payment_method.length > 0">
+
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Transactions</th>
+                <th>Collected</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let method of report.by_payment_method">
+
+                <td>{{ method.method_name }}</td>
+
+                <td>{{ method.contribution_count }}</td>
+
+                <td class="amount">
+                  {{ formatAmount(method.confirmed_amount) }}
+                </td>
+
+              </tr>
+            </tbody>
+          </table>
+
+        </div>
+
+        <div class="empty-report"
+             *ngIf="report.by_payment_method.length === 0">
+          No payment method data for this period.
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- DAILY COLLECTION -->
+
+    <div class="report-card daily-card">
+
+      <div class="report-header">
+        <h2>Daily Collection Activity</h2>
+        <span>{{ report.daily_activity.length }} days</span>
+      </div>
+
+      <div class="table-wrapper"
+           *ngIf="report.daily_activity.length > 0">
+
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Contributions</th>
+              <th>Confirmed Amount</th>
+              <th>Pending Amount</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let day of report.daily_activity">
+
+              <td>
+                {{ day.contribution_day | date:'mediumDate' }}
+              </td>
+
+              <td>{{ day.contribution_count }}</td>
+
+              <td class="amount">
+                {{ formatAmount(day.confirmed_amount) }}
+              </td>
+
+              <td class="pending-amount">
+                {{ formatAmount(day.pending_amount) }}
+              </td>
+
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+
+      <div class="empty-report"
+           *ngIf="report.daily_activity.length === 0">
+        No daily contribution activity.
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

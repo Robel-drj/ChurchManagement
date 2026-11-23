@@ -1,0 +1,280 @@
+
+<div class="reports-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Financial Reports</h1>
+      <p>Review contribution performance and financial activity.</p>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>{{ errorMessage }}</span>
+    <button type="button" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <section class="filter-card">
+    <div class="filter-heading">
+      <div>
+        <h2>Report Period</h2>
+        <p>Select a date range to generate your financial report.</p>
+      </div>
+    </div>
+
+    <div class="filter-controls">
+      <div class="form-group">
+        <label>From Date</label>
+        <input type="date" name="dateFrom" [(ngModel)]="dateFrom" />
+      </div>
+
+      <div class="form-group">
+        <label>To Date</label>
+        <input type="date" name="dateTo" [(ngModel)]="dateTo" />
+      </div>
+
+      <button
+        class="primary-btn"
+        type="button"
+        (click)="loadReport()"
+        [disabled]="loading"
+      >
+        {{ loading ? 'Generating...' : 'Generate Report' }}
+      </button>
+
+      <button
+        class="secondary-btn"
+        type="button"
+        (click)="clearDateFilter()"
+        [disabled]="loading"
+      >
+        Clear Dates
+      </button>
+    </div>
+  </section>
+
+  <div *ngIf="loading" class="loading-state">
+    Generating financial report...
+  </div>
+
+  <ng-container *ngIf="report && !loading">
+
+    <div class="report-period">
+      <span>Report period:</span>
+      <strong>
+        {{ report.period.date_from ? (report.period.date_from | date:'mediumDate') : 'All dates' }}
+        –
+        {{ report.period.date_to ? (report.period.date_to | date:'mediumDate') : 'Current records' }}
+      </strong>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <section class="summary-grid">
+
+      <div class="summary-card">
+        <div class="summary-icon total-icon">📊</div>
+        <div>
+          <span>Total Contributions</span>
+          <strong>{{ report.totals.total_contributions }}</strong>
+          <small>All recorded contribution statuses</small>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-icon confirmed-icon">✓</div>
+        <div>
+          <span>Confirmed Amount</span>
+          <strong>{{ formatAmount(report.totals.confirmed_amount) }}</strong>
+          <small>{{ report.totals.confirmed_count }} confirmed records</small>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-icon pending-icon">◷</div>
+        <div>
+          <span>Pending Amount</span>
+          <strong>{{ formatAmount(report.totals.pending_amount) }}</strong>
+          <small>{{ report.totals.pending_count }} pending records</small>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-icon rejected-icon">×</div>
+        <div>
+          <span>Rejected Amount</span>
+          <strong>{{ formatAmount(report.totals.rejected_amount) }}</strong>
+          <small>{{ report.totals.rejected_count }} rejected records</small>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-icon reversed-icon">↶</div>
+        <div>
+          <span>Reversed Amount</span>
+          <strong>{{ formatAmount(report.totals.reversed_amount) }}</strong>
+          <small>{{ report.totals.reversed_count }} reversed records</small>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- CATEGORY BREAKDOWN -->
+    <section class="report-card">
+      <div class="section-header">
+        <div>
+          <h2>Contributions by Category</h2>
+          <p>Confirmed and pending amounts for each category.</p>
+        </div>
+      </div>
+
+      <div
+        *ngIf="report.by_category.length === 0"
+        class="empty-state"
+      >
+        No category data is available for this period.
+      </div>
+
+      <div
+        *ngIf="report.by_category.length > 0"
+        class="breakdown-list"
+      >
+        <div class="breakdown-row" *ngFor="let item of report.by_category">
+
+          <div class="breakdown-heading">
+            <div>
+              <strong>{{ item.category_name }}</strong>
+              <small>
+                {{ item.contribution_count }} contributions ·
+                {{ item.confirmed_count }} confirmed
+              </small>
+            </div>
+
+            <strong>{{ formatAmount(item.confirmed_amount) }}</strong>
+          </div>
+
+          <div class="bar-track">
+            <div
+              class="bar-fill category-bar"
+              [style.width.%]="categoryWidth(item.confirmed_amount)"
+            ></div>
+          </div>
+
+          <div class="breakdown-footer">
+            <span>Pending: {{ formatAmount(item.pending_amount) }}</span>
+            <span>Confirmed: {{ formatAmount(item.confirmed_amount) }}</span>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- PAYMENT METHOD BREAKDOWN -->
+    <section class="report-card">
+      <div class="section-header">
+        <div>
+          <h2>Contributions by Payment Method</h2>
+          <p>Compare contribution activity across payment methods.</p>
+        </div>
+      </div>
+
+      <div
+        *ngIf="report.by_payment_method.length === 0"
+        class="empty-state"
+      >
+        No payment method data is available for this period.
+      </div>
+
+      <div
+        *ngIf="report.by_payment_method.length > 0"
+        class="breakdown-list"
+      >
+        <div
+          class="breakdown-row"
+          *ngFor="let item of report.by_payment_method"
+        >
+
+          <div class="breakdown-heading">
+            <div>
+              <strong>{{ item.method_name }}</strong>
+              <small>
+                {{ item.contribution_count }} contributions ·
+                {{ item.confirmed_count }} confirmed
+              </small>
+            </div>
+
+            <strong>{{ formatAmount(item.confirmed_amount) }}</strong>
+          </div>
+
+          <div class="bar-track">
+            <div
+              class="bar-fill payment-bar"
+              [style.width.%]="paymentMethodWidth(item.confirmed_amount)"
+            ></div>
+          </div>
+
+          <div class="breakdown-footer">
+            <span>Pending: {{ formatAmount(item.pending_amount) }}</span>
+            <span>Confirmed: {{ formatAmount(item.confirmed_amount) }}</span>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- DAILY ACTIVITY -->
+    <section class="report-card">
+      <div class="section-header">
+        <div>
+          <h2>Daily Contribution Activity</h2>
+          <p>Contribution amounts recorded on each day.</p>
+        </div>
+      </div>
+
+      <div
+        *ngIf="report.daily_activity.length === 0"
+        class="empty-state"
+      >
+        No daily activity is available for this period.
+      </div>
+
+      <div
+        *ngIf="report.daily_activity.length > 0"
+        class="table-wrapper"
+      >
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Contribution Count</th>
+              <th>Confirmed Amount</th>
+              <th>Pending Amount</th>
+              <th>Activity</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let day of report.daily_activity">
+              <td>{{ day.contribution_day | date:'mediumDate' }}</td>
+              <td>{{ day.contribution_count }}</td>
+              <td class="amount">
+                {{ formatAmount(day.confirmed_amount) }}
+              </td>
+              <td class="amount">
+                {{ formatAmount(day.pending_amount) }}
+              </td>
+              <td class="activity-cell">
+                <div class="bar-track">
+                  <div
+                    class="bar-fill daily-bar"
+                    [style.width.%]="dailyWidth(day.confirmed_amount)"
+                  ></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </ng-container>
+
+</div>

@@ -1,0 +1,181 @@
+
+<div class="page-container">
+  <header class="topbar">
+    <div>
+      <a routerLink="/platform-admin/dashboard" class="back-link">
+        ← Back to Dashboard
+      </a>
+      <h1>Church Details</h1>
+      <p>View and manage church registration information.</p>
+    </div>
+
+    @if (church) {
+      <span class="status-badge" [ngClass]="statusClass">
+        {{ church.status | titlecase }}
+      </span>
+    }
+  </header>
+
+  <main class="content">
+    @if (loading && !church) {
+      <div class="loading-state">Loading church information...</div>
+    }
+
+    @if (errorMessage) {
+      <div class="alert error-alert">{{ errorMessage }}</div>
+    }
+
+    @if (successMessage) {
+      <div class="alert success-alert">{{ successMessage }}</div>
+    }
+
+    @if (church) {
+      <section class="details-card">
+        <div class="section-heading">
+          <div>
+            <h2>{{ church.church_name }}</h2>
+            <p>Church code: {{ church.church_code }}</p>
+          </div>
+        </div>
+
+        <div class="metadata">
+          <div>
+            <span>Registration date</span>
+            <strong>{{ church.created_at | date:'mediumDate' }}</strong>
+          </div>
+          <div>
+            <span>Current status</span>
+            <strong>{{ church.status | titlecase }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="details-card">
+        <div class="section-heading">
+          <div>
+            <h2>Edit Church Information</h2>
+            <p>Update the church's registration details.</p>
+          </div>
+        </div>
+
+        <form #churchForm="ngForm" (ngSubmit)="saveChanges()">
+          <div class="form-group">
+            <label for="churchName">Church Name *</label>
+            <input
+              id="churchName"
+              type="text"
+              name="churchName"
+              [(ngModel)]="form.churchName"
+              required
+              maxlength="150"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="address">Address</label>
+            <textarea
+              id="address"
+              name="address"
+              [(ngModel)]="form.address"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input
+                id="phone"
+                type="tel"
+                name="phone"
+                [(ngModel)]="form.phone"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                [(ngModel)]="form.email"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="logoUrl">Logo URL</label>
+            <input
+              id="logoUrl"
+              type="url"
+              name="logoUrl"
+              [(ngModel)]="form.logoUrl"
+              placeholder="https://example.com/logo.png"
+            />
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="primary-button"
+              [disabled]="saving || churchForm.invalid"
+            >
+              {{ saving ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="details-card status-section">
+        <div class="section-heading">
+          <div>
+            <h2>Church Status Management</h2>
+            <p>Control whether this church can access the platform.</p>
+          </div>
+        </div>
+
+        @if (church.status !== 'active') {
+          <div class="status-action activate-action">
+            <div>
+              <strong>Activate Church</strong>
+              <p>Allow this church to become active on the platform.</p>
+            </div>
+
+            <button
+              type="button"
+              class="activate-button"
+              [disabled]="changingStatus"
+              (click)="changeStatus('active')"
+            >
+              {{ changingStatus ? 'Please wait...' : 'Activate Church' }}
+            </button>
+          </div>
+        }
+
+        @if (church.status === 'active') {
+          <div class="status-action suspend-action">
+            <div>
+              <strong>Suspend Church</strong>
+              <p>Suspend this church's platform access.</p>
+            </div>
+
+            <button
+              type="button"
+              class="suspend-button"
+              [disabled]="changingStatus"
+              (click)="changeStatus('suspended')"
+            >
+              {{ changingStatus ? 'Please wait...' : 'Suspend Church' }}
+            </button>
+          </div>
+        }
+      </section>
+
+      <div class="bottom-actions">
+        <button type="button" class="secondary-button" (click)="goBack()">
+          Back to Dashboard
+        </button>
+      </div>
+    }
+  </main>
+</div>

@@ -1,0 +1,242 @@
+<div class="accept-page">
+  <main class="accept-card">
+    <div class="brand">
+      <div class="brand-logo">C</div>
+      <div>
+        <h1>Church Management</h1>
+        <p>Administrator invitation</p>
+      </div>
+    </div>
+
+    @if (acceptedInvitation; as accepted) {
+      <section class="success-state">
+        <div class="success-icon">✓</div>
+        <h2>Invitation accepted</h2>
+        <p>
+          You are now a Church Administrator for
+          <strong>{{ accepted.church.name }}</strong>.
+        </p>
+        <div class="login-details">
+          <span>Sign in using</span>
+          <strong>{{ accepted.loginIdentifier }}</strong>
+        </div>
+        <a routerLink="/login" class="primary-link">Continue to sign in</a>
+      </section>
+    } @else {
+      <section class="heading">
+        <h2>Accept your invitation</h2>
+        @if (invitation; as details) {
+          <p>
+            Complete your access to
+            <strong>{{ details.church.name }}</strong>.
+          </p>
+        } @else {
+          <p>Open your invitation link or paste its token below.</p>
+        }
+      </section>
+
+      @if (errorMessage) {
+        <div class="message error-message" role="alert">
+          {{ errorMessage }}
+        </div>
+      }
+
+      @if (loadingInvitation) {
+        <div class="loading-state">
+          <span class="spinner"></span>
+          Checking invitation...
+        </div>
+      } @else if (!invitation) {
+        <form [formGroup]="tokenForm" (ngSubmit)="continueWithToken()">
+          <div class="field">
+            <label for="invitationToken">Invitation token</label>
+            <input
+              id="invitationToken"
+              type="text"
+              formControlName="token"
+              autocomplete="off"
+              placeholder="Paste the 64-character token"
+            />
+            @if (
+              tokenForm.controls.token.invalid &&
+              tokenForm.controls.token.touched
+            ) {
+              <small>Enter the complete 64-character invitation token.</small>
+            }
+          </div>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="loadingInvitation"
+          >
+            Continue
+          </button>
+        </form>
+      } @else {
+        <div class="invitation-summary">
+          <div>
+            <span>Church</span>
+            <strong>{{ invitation.church.name }}</strong>
+          </div>
+          <div>
+            <span>Expires</span>
+            <strong>{{ invitation.expiresAt | date:'medium' }}</strong>
+          </div>
+          @if (invitation.invitedEmail) {
+            <div>
+              <span>Invited email</span>
+              <strong>{{ invitation.invitedEmail }}</strong>
+            </div>
+          }
+          @if (invitation.invitedPhone) {
+            <div>
+              <span>Invited phone</span>
+              <strong>{{ invitation.invitedPhone }}</strong>
+            </div>
+          }
+        </div>
+
+        @if (invitation.accountExists) {
+          <div class="message info-message">
+            An account already exists for this invitation. Enter your current
+            password to add the Church Administrator role.
+          </div>
+        } @else {
+          <div class="message info-message">
+            Create your account to accept this invitation. Invited contact
+            details cannot be changed.
+          </div>
+        }
+
+        <form [formGroup]="acceptanceForm" (ngSubmit)="submit()">
+          @if (!invitation.accountExists) {
+            <div class="field">
+              <label for="fullName">Full name</label>
+              <input
+                id="fullName"
+                type="text"
+                formControlName="fullName"
+                autocomplete="name"
+                placeholder="Enter your full name"
+              />
+              @if (
+                acceptanceForm.controls.fullName.invalid &&
+                acceptanceForm.controls.fullName.touched
+              ) {
+                <small>Enter a name between 2 and 150 characters.</small>
+              }
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="email">Email address</label>
+                <input
+                  id="email"
+                  type="email"
+                  formControlName="email"
+                  autocomplete="email"
+                  [readOnly]="!!invitation.invitedEmail"
+                  placeholder="name@example.com"
+                />
+                @if (
+                  acceptanceForm.controls.email.invalid &&
+                  acceptanceForm.controls.email.touched
+                ) {
+                  <small>Enter a valid email address.</small>
+                }
+              </div>
+
+              <div class="field">
+                <label for="phone">Phone number</label>
+                <input
+                  id="phone"
+                  type="tel"
+                  formControlName="phone"
+                  autocomplete="tel"
+                  [readOnly]="!!invitation.invitedPhone"
+                  placeholder="Enter your phone number"
+                />
+                @if (
+                  acceptanceForm.controls.phone.invalid &&
+                  acceptanceForm.controls.phone.touched
+                ) {
+                  <small>Enter a phone number between 7 and 20 characters.</small>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="field-row">
+            <div class="field">
+              <label for="password">
+                {{ invitation.accountExists ? 'Current password' : 'Password' }}
+              </label>
+              <input
+                id="password"
+                type="password"
+                formControlName="password"
+                [autocomplete]="
+                  invitation.accountExists ? 'current-password' : 'new-password'
+                "
+                placeholder="Enter your password"
+              />
+              @if (
+                acceptanceForm.controls.password.invalid &&
+                acceptanceForm.controls.password.touched
+              ) {
+                <small>
+                  {{
+                    invitation.accountExists
+                      ? 'Your current password is required.'
+                      : 'Use between 8 and 72 characters.'
+                  }}
+                </small>
+              }
+            </div>
+
+            <div class="field">
+              <label for="confirmPassword">Confirm password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                formControlName="confirmPassword"
+                [autocomplete]="
+                  invitation.accountExists ? 'current-password' : 'new-password'
+                "
+                placeholder="Enter the password again"
+              />
+              @if (
+                acceptanceForm.hasError('passwordMismatch') &&
+                acceptanceForm.controls.confirmPassword.touched
+              ) {
+                <small>The passwords do not match.</small>
+              }
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="submitting"
+          >
+            {{ submitting ? 'Accepting invitation...' : 'Accept Invitation' }}
+          </button>
+
+          <button
+            type="button"
+            class="text-button"
+            (click)="useDifferentToken()"
+            [disabled]="submitting"
+          >
+            Use a different token
+          </button>
+        </form>
+      }
+
+      <p class="sign-in-link">
+        Already finished? <a routerLink="/login">Sign in</a>
+      </p>
+    }
+  </main>
+</div>

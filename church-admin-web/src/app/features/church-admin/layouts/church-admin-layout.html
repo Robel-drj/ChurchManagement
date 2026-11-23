@@ -1,0 +1,115 @@
+<div class="admin-layout">
+
+  <div
+    class="sidebar-overlay"
+    *ngIf="sidebarOpen"
+    (click)="closeSidebar()"
+  ></div>
+
+  <aside class="sidebar" [class.sidebar-open]="sidebarOpen">
+
+    <div class="brand">
+      <div class="brand-icon">✝</div>
+
+      <div class="brand-text">
+        <h2>Church Portal</h2>
+        <span>Management System</span>
+      </div>
+
+      <button class="mobile-close" (click)="closeSidebar()">×</button>
+    </div>
+
+    <nav class="sidebar-navigation">
+
+      <div class="menu-group" *ngFor="let group of menuGroups">
+
+        <p class="group-title">{{ group.title }}</p>
+
+        <a
+          *ngFor="let item of group.items"
+          [routerLink]="item.route"
+          routerLinkActive="active-link"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="menu-link"
+          (click)="closeSidebar()"
+        >
+          <span class="menu-icon">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </a>
+
+      </div>
+
+      <a
+        *ngIf="canSwitchWorkspace"
+        routerLink="/select-context"
+        class="menu-link"
+        (click)="closeSidebar()"
+      >
+        <span class="menu-icon">⇄</span>
+        <span>Switch workspace</span>
+      </a>
+
+    </nav>
+
+    <div class="sidebar-footer">
+      <a
+        class="footer-profile"
+        routerLink="/church-admin/my-profile"
+        (click)="closeSidebar()"
+      >
+        <span class="footer-avatar">{{ userInitials }}</span>
+
+        <span class="footer-user">
+          <strong>{{ user?.fullName || 'Church Admin' }}</strong>
+          <span>View my profile</span>
+        </span>
+      </a>
+
+      <button class="sidebar-logout" type="button" (click)="logout()">
+        <span aria-hidden="true">↪</span>
+        Sign out
+      </button>
+    </div>
+
+  </aside>
+
+  <main class="main-area">
+
+    <header class="topbar">
+      <button class="menu-toggle" (click)="sidebarOpen = !sidebarOpen">
+        ☰
+      </button>
+
+      <div class="topbar-title">
+        <span>Church Administration</span>
+      </div>
+
+      <div class="topbar-right">
+        <a
+          class="topbar-profile"
+          routerLink="/church-admin/my-profile"
+          routerLinkActive="active-profile"
+          [routerLinkActiveOptions]="{ exact: true }"
+          aria-label="Open my profile"
+        >
+          <span class="topbar-avatar">{{ userInitials }}</span>
+
+          <span class="topbar-profile-copy">
+            <strong>{{ user?.fullName || 'Church Admin' }}</strong>
+            <small>My Profile</small>
+          </span>
+        </a>
+
+        <button class="topbar-logout" type="button" (click)="logout()">
+          Sign out
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <router-outlet></router-outlet>
+    </div>
+
+  </main>
+
+</div>

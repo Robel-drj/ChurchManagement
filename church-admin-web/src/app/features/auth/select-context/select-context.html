@@ -1,0 +1,55 @@
+
+<div class="selection-page">
+  <div class="selection-card">
+    <h1>Choose your workspace</h1>
+
+    <p class="subtitle">
+      Welcome, {{ user?.fullName }}.
+      Select the workspace and role you want to use.
+    </p>
+
+    @if (hasPlatformWorkspace) {
+      <section class="church-section platform-section">
+        <h2>Platform Administration</h2>
+        <p>Manage churches, invitations, and platform audit activity.</p>
+
+        <div class="role-list">
+          <button
+            type="button"
+            class="role-button"
+            (click)="choosePlatformContext()"
+          >
+            Continue as Platform Administrator
+          </button>
+        </div>
+      </section>
+    }
+
+    @for (membership of churchMemberships; track membership.membershipId) {
+      @if (hasDashboardRole(membership)) {
+        <section class="church-section">
+          <h2>{{ membership.church.name }}</h2>
+          <p>Church code: {{ membership.church.code }}</p>
+
+          <div class="role-list">
+            @for (role of membership.roles; track role) {
+              @if (isDashboardRole(role)) {
+                <button
+                  type="button"
+                  class="role-button"
+                  (click)="chooseContext(membership, role)"
+                >
+                  Continue as {{ formatRole(role) }}
+                </button>
+              }
+            }
+          </div>
+        </section>
+      }
+    }
+
+    <button type="button" class="logout-button" (click)="logout()">
+      Sign out
+    </button>
+  </div>
+</div>

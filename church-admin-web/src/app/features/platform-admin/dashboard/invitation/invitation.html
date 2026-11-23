@@ -1,0 +1,269 @@
+
+<div class="page-container">
+  <header class="topbar">
+    <div>
+      <a routerLink="/platform-admin/dashboard" class="back-link">
+        ← Back to Dashboard
+      </a>
+      <h1>Church Admin Invitations</h1>
+      <p>Invite and manage administrators for registered churches.</p>
+    </div>
+  </header>
+
+  <main class="content">
+
+    @if (errorMessage) {
+      <div class="alert error-alert">{{ errorMessage }}</div>
+    }
+
+    @if (successMessage) {
+      <div class="alert success-alert">{{ successMessage }}</div>
+    }
+
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <h2>Select Church</h2>
+          <p>Choose the church whose invitations you want to manage.</p>
+        </div>
+      </div>
+
+      @if (loadingChurches) {
+        <p>Loading churches...</p>
+      } @else {
+        <div class="form-group">
+          <label for="church">Church</label>
+          <select
+            id="church"
+            name="church"
+            [(ngModel)]="selectedChurchId"
+            (ngModelChange)="onChurchChange()"
+          >
+            <option value="">Select a church</option>
+            @for (church of churches; track church.id) {
+              <option [value]="church.id">
+                {{ church.church_name }} ({{ church.status }})
+              </option>
+            }
+          </select>
+        </div>
+      }
+    </section>
+
+    @if (selectedChurchId) {
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>Invite Church Administrator</h2>
+            <p>
+              Create an administrator invitation for
+              <strong>{{ selectedChurchName }}</strong>.
+            </p>
+          </div>
+        </div>
+
+        <form (ngSubmit)="createInvitation()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="invitedEmail">Email Address</label>
+              <input
+                id="invitedEmail"
+                type="email"
+                name="invitedEmail"
+                [(ngModel)]="invitedEmail"
+                placeholder="admin@example.com"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="invitedPhone">Phone Number</label>
+              <input
+                id="invitedPhone"
+                type="tel"
+                name="invitedPhone"
+                [(ngModel)]="invitedPhone"
+                placeholder="Enter phone number"
+              />
+            </div>
+          </div>
+
+          <p class="help-text">
+            Provide at least one contact method: email or phone. The Church
+            Administrator must use an account separate from the Platform
+            Administrator account.
+          </p>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="creating"
+          >
+            {{ creating ? 'Creating invitation...' : 'Create Invitation' }}
+          </button>
+        </form>
+
+        @if (invitationToken) {
+          <div class="token-box">
+            <strong>Invitation created</strong>
+            <p>
+              Open this link to test it, or copy and securely share it with
+              the invited administrator. For security, it will not be
+              displayed again after you leave this page.
+            </p>
+
+            <div class="token-value">
+              <a
+                class="invitation-url"
+                [href]="invitationLink"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ invitationLink }}
+              </a>
+
+              <div class="token-actions">
+                <a
+                  class="open-link-button"
+                  [href]="invitationLink"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open Invitation
+                </a>
+
+                <button
+                  type="button"
+                  class="copy-button"
+                  (click)="copyInvitationLink()"
+                >
+                  Copy Link
+                </button>
+              </div>
+            </div>
+
+            <ol class="assignment-steps">
+              <li>The invited person opens the link.</li>
+              <li>
+                They create an account, or confirm their existing account
+                password.
+              </li>
+              <li>
+                After they select <strong>Accept Invitation</strong>, the
+                Church Admin role is assigned automatically for
+                <strong>{{ selectedChurchName }}</strong>.
+              </li>
+            </ol>
+          </div>
+        }
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>Invitation History</h2>
+            <p>Invitations associated with this church.</p>
+          </div>
+
+          <button
+            type="button"
+            class="refresh-button"
+            (click)="loadInvitations()"
+            [disabled]="loadingInvitations"
+          >
+            Refresh
+          </button>
+        </div>
+
+        @if (loadingInvitations) {
+          <div class="empty-state">Loading invitations...</div>
+        } @else if (invitations.length === 0) {
+          <div class="empty-state">
+            No invitations have been created for this church.
+          </div>
+        } @else {
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Expires</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (invitation of invitations; track invitation.id) {
+                  <tr>
+                    <td>{{ invitation.invited_email || '—' }}</td>
+                    <td>{{ invitation.invited_phone || '—' }}</td>
+                    <td>{{ invitation.role_name || 'Church Admin' }}</td>
+                    <td>
+                      <span
+                        class="status-badge"
+                        [ngClass]="invitation.status"
+                      >
+                        {{ invitation.status | titlecase }}
+                      </span>
+                      @if (invitation.status === 'accepted') {
+                        <small class="assigned-note">Admin assigned</small>
+                      }
+                    </td>
+                    <td>
+                      {{ invitation.created_at | date:'mediumDate' }}
+                    </td>
+                    <td>
+                      {{ invitation.expires_at | date:'mediumDate' }}
+                    </td>
+                    <td>
+                      @if (invitation.status === 'pending') {
+                        <div class="invitation-actions">
+                          <button
+                            type="button"
+                            class="regenerate-button"
+                            [disabled]="
+                              regeneratingId === invitation.id ||
+                              revokingId === invitation.id
+                            "
+                            (click)="regenerateInvitation(invitation)"
+                          >
+                            {{
+                              regeneratingId === invitation.id
+                                ? 'Generating...'
+                                : 'New Link'
+                            }}
+                          </button>
+
+                          <button
+                            type="button"
+                            class="revoke-button"
+                            [disabled]="
+                              revokingId === invitation.id ||
+                              regeneratingId === invitation.id
+                            "
+                            (click)="revokeInvitation(invitation)"
+                          >
+                            {{
+                              revokingId === invitation.id
+                                ? 'Revoking...'
+                                : 'Revoke'
+                            }}
+                          </button>
+                        </div>
+                      } @else {
+                        <span class="no-action">—</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  </main>
+</div>

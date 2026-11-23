@@ -1,0 +1,589 @@
+
+<div class="contributions-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Contributions</h1>
+      <p>Record, review, and manage church contributions.</p>
+    </div>
+
+    <button
+      class="primary-btn"
+      type="button"
+      (click)="openCreateForm()"
+    >
+      + Record Contribution
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>{{ errorMessage }}</span>
+    <button type="button" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span>{{ successMessage }}</span>
+    <button type="button" (click)="successMessage = ''">×</button>
+  </div>
+
+  <section class="filter-card">
+    <div class="filter-header">
+      <div>
+        <h2>Find Contributions</h2>
+        <p>Search and filter contribution records.</p>
+      </div>
+    </div>
+
+    <div class="filters-grid">
+
+      <div class="filter-group search-filter">
+        <label>Search</label>
+        <input
+          type="search"
+          name="search"
+          [(ngModel)]="searchTerm"
+          placeholder="Member name, phone, or reference"
+          (keyup.enter)="applyFilters()"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label>Status</label>
+        <select name="statusFilter" [(ngModel)]="statusFilter">
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="rejected">Rejected</option>
+          <option value="reversed">Reversed</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Category</label>
+        <select name="categoryFilter" [(ngModel)]="categoryFilter">
+          <option value="">All categories</option>
+          <option *ngFor="let category of categories" [value]="category.id">
+            {{ category.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Payment Method</label>
+        <select
+          name="paymentMethodFilter"
+          [(ngModel)]="paymentMethodFilter"
+        >
+          <option value="">All payment methods</option>
+          <option
+            *ngFor="let method of paymentMethods"
+            [value]="method.id"
+          >
+            {{ method.method_name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>From Date</label>
+        <input type="date" name="dateFrom" [(ngModel)]="dateFrom" />
+      </div>
+
+      <div class="filter-group">
+        <label>To Date</label>
+        <input type="date" name="dateTo" [(ngModel)]="dateTo" />
+      </div>
+
+    </div>
+
+    <div class="filter-actions">
+      <button
+        class="secondary-btn"
+        type="button"
+        (click)="clearFilters()"
+      >
+        Clear Filters
+      </button>
+
+      <button
+        class="primary-btn"
+        type="button"
+        (click)="applyFilters()"
+      >
+        Apply Filters
+      </button>
+    </div>
+  </section>
+
+  <section class="contributions-card">
+
+    <div class="section-header">
+      <div>
+        <h2>Contribution Records</h2>
+        <p>{{ total }} record(s) found</p>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      Loading contribution records...
+    </div>
+
+    <div
+      *ngIf="!loading && contributions.length === 0"
+      class="empty-state"
+    >
+      <div class="empty-icon">💰</div>
+      <h3>No contributions found</h3>
+      <p>There are no records matching the selected filters.</p>
+
+      <button
+        class="primary-btn"
+        type="button"
+        (click)="openCreateForm()"
+      >
+        Record Contribution
+      </button>
+    </div>
+
+    <div
+      *ngIf="!loading && contributions.length > 0"
+      class="table-wrapper"
+    >
+      <table>
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Category</th>
+            <th>Payment Method</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Received By</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of contributions">
+            <td>
+              <div class="member-cell">
+                <strong>{{ item.member_name }}</strong>
+                <small>{{ item.member_number || item.member_phone }}</small>
+              </div>
+            </td>
+
+            <td>{{ item.category_name }}</td>
+            <td>{{ item.payment_method }}</td>
+
+            <td class="amount-cell">
+              {{ formatAmount(item.amount) }}
+            </td>
+
+            <td>{{ item.contribution_date | date:'mediumDate' }}</td>
+
+            <td>
+              <span
+                class="status-badge"
+                [ngClass]="getStatusClass(item.payment_status)"
+              >
+                {{ formatStatus(item.payment_status) }}
+              </span>
+            </td>
+
+            <td>{{ item.received_by_name || '—' }}</td>
+
+            <td>
+              <button
+                class="view-btn"
+                type="button"
+                (click)="openDetails(item)"
+              >
+                View
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div
+      *ngIf="!loading && totalPages > 1"
+      class="pagination"
+    >
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+
+      <div class="pagination-buttons">
+        <button
+          type="button"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+        >
+          Previous
+        </button>
+
+        <button
+          *ngFor="let page of getPageNumbers()"
+          type="button"
+          [class.current-page]="page === currentPage"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          type="button"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<!-- CREATE CONTRIBUTION MODAL -->
+<div
+  class="modal-backdrop"
+  *ngIf="showCreateForm"
+  (click)="closeCreateForm()"
+>
+  <section class="modal modal-large" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2>Record Contribution</h2>
+        <p>Enter the contribution information.</p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeCreateForm()">
+        ×
+      </button>
+    </div>
+
+    <form (ngSubmit)="createContribution()">
+
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>Church Member *</label>
+          <select
+            name="membership_id"
+            [(ngModel)]="createData.membership_id"
+            required
+          >
+            <option value="">Select member</option>
+            <option *ngFor="let member of members" [value]="member.membership_id">
+              {{ member.full_name }} — {{ member.member_number || member.phone }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Contribution Category *</label>
+          <select
+            name="category_id"
+            [(ngModel)]="createData.category_id"
+            required
+          >
+            <option value="">Select category</option>
+            <option *ngFor="let category of categories" [value]="category.id">
+              {{ category.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Method *</label>
+          <select
+            name="payment_method_id"
+            [(ngModel)]="createData.payment_method_id"
+            required
+          >
+            <option value="">Select payment method</option>
+            <option *ngFor="let method of paymentMethods" [value]="method.id">
+              {{ method.method_name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Amount *</label>
+          <input
+            type="number"
+            name="amount"
+            [(ngModel)]="createData.amount"
+            min="0.01"
+            step="0.01"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Contribution Date</label>
+          <input
+            type="datetime-local"
+            name="contribution_date"
+            [(ngModel)]="createData.contribution_date"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Payment Status</label>
+          <select
+            name="payment_status"
+            [(ngModel)]="createData.payment_status"
+          >
+            <option value="confirmed">Confirmed</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+
+        <div class="form-group full-width">
+          <label>Transaction Reference</label>
+          <input
+            type="text"
+            name="transaction_reference"
+            [(ngModel)]="createData.transaction_reference"
+            maxlength="150"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label>Notes</label>
+          <textarea
+            name="notes"
+            [(ngModel)]="createData.notes"
+            rows="3"
+          ></textarea>
+        </div>
+
+      </div>
+
+      <div class="form-note">
+        Verify the member, amount, category, and payment method before
+        recording. The receiving staff member is recorded by the backend.
+      </div>
+
+      <div class="modal-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeCreateForm()"
+          [disabled]="saving"
+        >
+          Cancel
+        </button>
+
+        <button
+          class="primary-btn"
+          type="submit"
+          [disabled]="saving"
+        >
+          {{ saving ? 'Recording...' : 'Record Contribution' }}
+        </button>
+      </div>
+
+    </form>
+  </section>
+</div>
+
+<!-- CONTRIBUTION DETAILS MODAL -->
+<div
+  class="modal-backdrop"
+  *ngIf="showDetailsModal"
+  (click)="closeDetails()"
+>
+  <section class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2>Contribution Details</h2>
+        <p>Review the complete transaction record.</p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeDetails()">
+        ×
+      </button>
+    </div>
+
+    <div *ngIf="detailsLoading" class="loading-state">
+      Loading contribution details...
+    </div>
+
+    <ng-container *ngIf="selectedContribution && !detailsLoading">
+
+      <div class="details-grid">
+
+        <div>
+          <span>Member</span>
+          <strong>{{ selectedContribution.member_name }}</strong>
+        </div>
+
+        <div>
+          <span>Member Number</span>
+          <strong>{{ selectedContribution.member_number || '—' }}</strong>
+        </div>
+
+        <div>
+          <span>Phone</span>
+          <strong>{{ selectedContribution.member_phone }}</strong>
+        </div>
+
+        <div>
+          <span>Email</span>
+          <strong>{{ selectedContribution.member_email || '—' }}</strong>
+        </div>
+
+        <div>
+          <span>Category</span>
+          <strong>{{ selectedContribution.category_name }}</strong>
+        </div>
+
+        <div>
+          <span>Payment Method</span>
+          <strong>{{ selectedContribution.payment_method }}</strong>
+        </div>
+
+        <div>
+          <span>Payment Provider</span>
+          <strong>{{ selectedContribution.payment_provider || '—' }}</strong>
+        </div>
+
+        <div>
+          <span>Amount</span>
+          <strong class="amount-cell">
+            {{ formatAmount(selectedContribution.amount) }}
+          </strong>
+        </div>
+
+        <div>
+          <span>Contribution Date</span>
+          <strong>{{ selectedContribution.contribution_date | date:'medium' }}</strong>
+        </div>
+
+        <div>
+          <span>Status</span>
+          <strong>
+            <span
+              class="status-badge"
+              [ngClass]="getStatusClass(selectedContribution.payment_status)"
+            >
+              {{ formatStatus(selectedContribution.payment_status) }}
+            </span>
+          </strong>
+        </div>
+
+        <div>
+          <span>Transaction Reference</span>
+          <strong>{{ selectedContribution.transaction_reference || '—' }}</strong>
+        </div>
+
+        <div>
+          <span>Received By</span>
+          <strong>{{ selectedContribution.received_by_name || '—' }}</strong>
+        </div>
+
+        <div class="full-width">
+          <span>Notes</span>
+          <strong>{{ selectedContribution.notes || 'No notes' }}</strong>
+        </div>
+
+      </div>
+
+      <div class="modal-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeDetails()"
+        >
+          Close
+        </button>
+
+        <button
+          *ngIf="
+            selectedContribution.payment_status === 'pending' ||
+            selectedContribution.payment_status === 'confirmed'
+          "
+          class="primary-btn"
+          type="button"
+          (click)="openEditForm()"
+        >
+          Update Record
+        </button>
+      </div>
+
+      <div *ngIf="showEditForm" class="edit-section">
+
+        <h3>Update Contribution</h3>
+
+        <div
+          *ngIf="selectedContribution.payment_status === 'pending'"
+          class="form-group"
+        >
+          <label>Payment Status</label>
+          <select
+            name="editPaymentStatus"
+            [(ngModel)]="editData.payment_status"
+          >
+            <option value="">Keep pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Transaction Reference</label>
+          <input
+            type="text"
+            name="editReference"
+            [(ngModel)]="editData.transaction_reference"
+            maxlength="150"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea
+            name="editNotes"
+            [(ngModel)]="editData.notes"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-note">
+          <ng-container *ngIf="selectedContribution.payment_status === 'pending'">
+            Choose a new status only when confirming or rejecting this pending
+            payment.
+          </ng-container>
+          The amount, member, category, and payment method cannot be changed
+          after the contribution is recorded. Confirmed payment statuses are
+          locked.
+        </div>
+
+        <div class="modal-actions">
+          <button
+            class="secondary-btn"
+            type="button"
+            (click)="closeEditForm()"
+            [disabled]="saving"
+          >
+            Cancel
+          </button>
+
+          <button
+            class="primary-btn"
+            type="button"
+            (click)="updateContribution()"
+            [disabled]="saving"
+          >
+            {{ saving ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+
+      </div>
+
+    </ng-container>
+  </section>
+</div>

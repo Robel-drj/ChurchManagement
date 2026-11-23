@@ -1,0 +1,139 @@
+
+<div class="secretary-dashboard">
+
+  <div class="dashboard-header">
+    <div>
+      <h1>Secretary Dashboard</h1>
+      <p>{{ churchName || 'Church' }} — Membership overview</p>
+    </div>
+
+    <button class="refresh-btn"
+            (click)="loadMembers()"
+            [disabled]="loading">
+      ↻ Refresh
+    </button>
+  </div>
+
+  <div class="error-message" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="summary-grid">
+
+    <div class="summary-card total-card">
+      <div class="summary-top">
+        <span>Total Members</span>
+        <span class="card-icon">👥</span>
+      </div>
+      <h2>{{ totalMembers }}</h2>
+      <p>Registered church memberships</p>
+    </div>
+
+    <div class="summary-card active-card">
+      <div class="summary-top">
+        <span>Active Members</span>
+        <span class="card-icon">✓</span>
+      </div>
+      <h2>{{ activeMembers }}</h2>
+      <p>Currently active</p>
+    </div>
+
+    <div class="summary-card pending-card">
+      <div class="summary-top">
+        <span>Pending Members</span>
+        <span class="card-icon">⏳</span>
+      </div>
+      <h2>{{ pendingMembers }}</h2>
+      <p>Pending membership</p>
+    </div>
+
+    <div class="summary-card suspended-card">
+      <div class="summary-top">
+        <span>Suspended Members</span>
+        <span class="card-icon">⊘</span>
+      </div>
+      <h2>{{ suspendedMembers }}</h2>
+      <p>Suspended membership</p>
+    </div>
+
+  </div>
+
+  <div class="members-card">
+
+    <div class="members-header">
+      <div>
+        <h2>Recent Member Registrations</h2>
+        <p>Latest registered members in your church</p>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <input
+        type="text"
+        [(ngModel)]="search"
+        placeholder="Search members by name or phone..."
+        (keyup.enter)="searchMembers()"/>
+
+      <button class="primary-btn" (click)="searchMembers()">
+        Search
+      </button>
+
+      <button class="secondary-btn" (click)="clearSearch()">
+        Reset
+      </button>
+    </div>
+
+    <div class="loading-state" *ngIf="loading">
+      Loading members...
+    </div>
+
+    <div class="empty-state"
+         *ngIf="!loading && recentMembers.length === 0">
+      <h3>No members found</h3>
+      <p>Member registrations will appear here.</p>
+    </div>
+
+    <div class="table-wrapper"
+         *ngIf="!loading && recentMembers.length > 0">
+
+      <table>
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Member Number</th>
+            <th>Phone</th>
+            <th>Joined</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let member of recentMembers; trackBy: trackByMember">
+
+            <td>
+              <div class="member-name">{{ member.full_name }}</div>
+              <small>{{ member.email || 'No email' }}</small>
+            </td>
+
+            <td>{{ member.member_number || '—' }}</td>
+
+            <td>{{ member.phone }}</td>
+
+            <td>{{ member.joined_at | date:'mediumDate' }}</td>
+
+            <td>
+              <span class="status-badge"
+                    [ngClass]="'status-' + member.membership_status">
+                {{ member.membership_status }}
+              </span>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,108 @@
+<div class="role-profile-page">
+  <div class="profile-page-header">
+    <div>
+      <span class="eyebrow">MY ACCOUNT</span>
+      <h1>My Profile</h1>
+      <p>View your account and active church workspace information.</p>
+    </div>
+
+    <a class="dashboard-link" [routerLink]="dashboardRoute">
+      Back to dashboard
+    </a>
+  </div>
+
+  <div class="profile-grid" *ngIf="user && membership; else unavailable">
+    <section class="identity-card">
+      <div class="profile-avatar">{{ userInitials }}</div>
+      <h2>{{ user.fullName }}</h2>
+      <span class="role-badge">{{ formatRole(activeRole || '') }}</span>
+      <p>{{ membership.church.name }}</p>
+    </section>
+
+    <section class="details-card">
+      <div class="card-heading">
+        <h2>Account Information</h2>
+        <span [class.active]="user.accountStatus === 'active'">
+          {{ user.accountStatus | titlecase }}
+        </span>
+      </div>
+
+      <div class="details-grid">
+        <div class="detail-item">
+          <span>Full Name</span>
+          <strong>{{ user.fullName }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Phone Number</span>
+          <strong>{{ user.phone }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Email Address</span>
+          <strong>{{ user.email || 'Not provided' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Account Created</span>
+          <strong>{{ user.createdAt | date:'mediumDate' }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="details-card church-card">
+      <div class="card-heading">
+        <h2>Church Membership</h2>
+        <span [class.active]="membership.membershipStatus === 'active'">
+          {{ membership.membershipStatus | titlecase }}
+        </span>
+      </div>
+
+      <div class="church-heading">
+        <div class="church-avatar">
+          <img
+            *ngIf="membership.church.logoUrl"
+            [src]="membership.church.logoUrl"
+            [alt]="membership.church.name + ' logo'"
+          />
+          <span *ngIf="!membership.church.logoUrl">
+            {{ membership.church.name.charAt(0).toUpperCase() }}
+          </span>
+        </div>
+
+        <div>
+          <h3>{{ membership.church.name }}</h3>
+          <p>Church code: {{ membership.church.code }}</p>
+        </div>
+      </div>
+
+      <div class="details-grid membership-details">
+        <div class="detail-item">
+          <span>Member Number</span>
+          <strong>{{ membership.memberNumber || 'Not assigned' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Active Workspace</span>
+          <strong>{{ formatRole(activeRole || '') }}</strong>
+        </div>
+
+        <div class="detail-item full-width">
+          <span>Assigned Roles</span>
+          <div class="role-list">
+            <span *ngFor="let role of membership.roles">
+              {{ formatRole(role) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <ng-template #unavailable>
+    <div class="profile-unavailable">
+      <h2>Profile unavailable</h2>
+      <p>Select an active church workspace to view your profile.</p>
+    </div>
+  </ng-template>
+</div>

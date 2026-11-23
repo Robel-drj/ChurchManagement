@@ -1,0 +1,536 @@
+
+<div class="content-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Posts & Content</h1>
+      <p>Create announcements, news, teaching materials, and church notices.</p>
+    </div>
+
+    <button class="primary-btn" type="button" (click)="openCreateForm()">
+      + Create Post
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>{{ errorMessage }}</span>
+    <button type="button" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span>{{ successMessage }}</span>
+    <button type="button" (click)="successMessage = ''">×</button>
+  </div>
+
+  <section class="filter-card">
+    <div class="filters-grid">
+
+      <div class="form-group search-group">
+        <label>Search Posts</label>
+        <input
+          type="search"
+          name="searchTerm"
+          [(ngModel)]="searchTerm"
+          placeholder="Search title or content..."
+          (keyup.enter)="applyFilters()"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Post Type</label>
+        <select name="postTypeFilter" [(ngModel)]="postTypeFilter">
+          <option value="">All types</option>
+          <option value="announcement">Announcement</option>
+          <option value="news">News</option>
+          <option value="teaching">Teaching</option>
+          <option value="notice">Notice</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Status</label>
+        <select name="statusFilter" [(ngModel)]="statusFilter">
+          <option value="">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button class="secondary-btn" type="button" (click)="clearFilters()">
+          Clear
+        </button>
+
+        <button class="primary-btn" type="button" (click)="applyFilters()">
+          Apply
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="posts-card">
+
+    <div class="section-header">
+      <div>
+        <h2>Church Posts</h2>
+        <p>{{ total }} post(s) found</p>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      Loading posts...
+    </div>
+
+    <div *ngIf="!loading && posts.length === 0" class="empty-state">
+      <div class="empty-icon">📝</div>
+      <h3>No posts found</h3>
+      <p>Create your first church post to share information with members.</p>
+
+      <button class="primary-btn" type="button" (click)="openCreateForm()">
+        Create Post
+      </button>
+    </div>
+
+    <div *ngIf="!loading && posts.length > 0" class="posts-list">
+
+      <article class="post-row" *ngFor="let post of posts">
+
+        <div class="post-main">
+          <div class="post-meta">
+            <span class="type-badge">{{ formatPostType(post.post_type) }}</span>
+
+            <span
+              class="status-badge"
+              [ngClass]="getStatusClass(post.status)"
+            >
+              {{ post.status }}
+            </span>
+          </div>
+
+          <h3>{{ post.title }}</h3>
+
+          <p class="post-preview">
+            {{ post.content | slice:0:220 }}
+            <span *ngIf="post.content.length > 220">...</span>
+          </p>
+
+          <div class="post-footer">
+            <span>By {{ post.creator_name || 'Church Staff' }}</span>
+            <span>Created {{ post.created_at | date:'mediumDate' }}</span>
+            <span *ngIf="post.published_at">
+              Published {{ post.published_at | date:'mediumDate' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="post-actions">
+          <button
+            class="view-btn"
+            type="button"
+            (click)="openPostDetails(post)"
+          >
+            View
+          </button>
+
+          <button
+            class="edit-btn"
+            type="button"
+            *ngIf="post.status !== 'archived'"
+            (click)="openEditForm(post)"
+          >
+            Edit
+          </button>
+
+          <button
+            class="publish-btn"
+            type="button"
+            *ngIf="post.status === 'draft'"
+            (click)="changePostStatus(post, 'publish')"
+          >
+            Publish
+          </button>
+
+          <button
+            class="unpublish-btn"
+            type="button"
+            *ngIf="post.status === 'published'"
+            (click)="changePostStatus(post, 'unpublish')"
+          >
+            Unpublish
+          </button>
+
+          <button
+            class="archive-btn"
+            type="button"
+            *ngIf="post.status !== 'archived'"
+            (click)="changePostStatus(post, 'archive')"
+          >
+            Archive
+          </button>
+
+          <button
+            class="delete-btn"
+            type="button"
+            (click)="deletePost(post)"
+          >
+            Delete
+          </button>
+        </div>
+
+      </article>
+
+    </div>
+
+    <div *ngIf="!loading && totalPages > 1" class="pagination">
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+
+      <div class="pagination-buttons">
+        <button
+          type="button"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+        >
+          Previous
+        </button>
+
+        <button
+          *ngFor="let page of getPageNumbers()"
+          type="button"
+          [class.current-page]="page === currentPage"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          type="button"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<!-- CREATE / EDIT POST MODAL -->
+<div
+  class="modal-backdrop"
+  *ngIf="showForm"
+  (click)="closeForm()"
+>
+  <section class="modal modal-large" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2>{{ editingPost ? 'Edit Post' : 'Create Post' }}</h2>
+        <p>Enter the content you want to share with church members.</p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeForm()">
+        ×
+      </button>
+    </div>
+
+    <form (ngSubmit)="savePost()">
+
+      <div class="form-group">
+        <label>Post Title *</label>
+        <input
+          type="text"
+          name="title"
+          [(ngModel)]="form.title"
+          minlength="2"
+          maxlength="200"
+          required
+          placeholder="Enter post title"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Post Type *</label>
+        <select name="post_type" [(ngModel)]="form.post_type" required>
+          <option value="announcement">Announcement</option>
+          <option value="news">News</option>
+          <option value="teaching">Teaching</option>
+          <option value="notice">Notice</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Post Content *</label>
+        <textarea
+          name="content"
+          [(ngModel)]="form.content"
+          rows="10"
+          maxlength="20000"
+          required
+          placeholder="Write your church post..."
+        ></textarea>
+        <small>{{ form.content.length }} / 20,000 characters</small>
+      </div>
+
+<!-- PHOTO AND VIDEO UPLOAD -->
+<div class="media-upload-field">
+
+  <div class="upload-heading">
+    <div>
+      <label>Photos and Videos</label>
+      <p>Attach images and videos to your church post.</p>
+    </div>
+
+    <span>{{ selectedFiles.length }} selected</span>
+  </div>
+
+  <label class="file-picker" for="createPostMedia">
+    <span class="upload-icon">＋</span>
+    <strong>Select Photos or Videos</strong>
+    <small>JPG, PNG, WebP, GIF, MP4, WebM, MOV</small>
+  </label>
+
+  <input
+    id="createPostMedia"
+    type="file"
+    accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+    multiple
+    (change)="onCreateFilesSelected($event)"
+    hidden
+  />
+
+  <div
+    class="selected-media-grid"
+    *ngIf="mediaPreviews.length > 0"
+  >
+
+    <div
+      class="selected-media-item"
+      *ngFor="let item of mediaPreviews; let i = index"
+    >
+
+      <img
+        *ngIf="item.type === 'image'"
+        [src]="item.url"
+        [alt]="item.file.name"
+      />
+
+      <video
+        *ngIf="item.type === 'video'"
+        [src]="item.url"
+        controls
+      ></video>
+
+      <div class="selected-media-info">
+        <span>{{ item.file.name }}</span>
+        <small>{{ formatFileSize(item.file.size) }}</small>
+      </div>
+
+      <button
+        type="button"
+        class="remove-selected-media"
+        (click)="removeCreateFile(i)"
+        [disabled]="saving"
+      >
+        Remove
+      </button>
+
+    </div>
+
+  </div>
+
+  <small class="upload-help">
+    Maximum 10 files per post upload. Images must be 10 MB or smaller.
+    Total selected file size cannot exceed 100 MB.
+  </small>
+
+</div>
+
+      <div class="form-note">
+        Media is attached after the post is created. You can upload images
+        and videos from the post details page.
+      </div>
+
+      <div class="modal-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeForm()"
+          [disabled]="saving"
+        >
+          Cancel
+        </button>
+
+        <button class="primary-btn" type="submit" [disabled]="saving">
+          {{ saving ? 'Saving...' : (editingPost ? 'Save Changes' : 'Create Draft') }}
+        </button>
+      </div>
+
+    </form>
+  </section>
+</div>
+
+<!-- POST DETAILS AND MEDIA MODAL -->
+<div
+  class="modal-backdrop"
+  *ngIf="showDetails"
+  (click)="closeDetails()"
+>
+  <section class="modal modal-large" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2>Post Details</h2>
+        <p>View post content and manage attached media.</p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeDetails()">
+        ×
+      </button>
+    </div>
+
+    <div *ngIf="detailsLoading" class="loading-state">
+      Loading post details...
+    </div>
+
+    <ng-container *ngIf="selectedPost && !detailsLoading">
+
+      <div class="details-meta">
+        <span class="type-badge">
+          {{ formatPostType(selectedPost.post_type) }}
+        </span>
+
+        <span
+          class="status-badge"
+          [ngClass]="getStatusClass(selectedPost.status)"
+        >
+          {{ selectedPost.status }}
+        </span>
+      </div>
+
+      <h3 class="details-title">{{ selectedPost.title }}</h3>
+
+      <div class="post-content">
+        {{ selectedPost.content }}
+      </div>
+
+      <div class="details-author">
+        Created by {{ selectedPost.creator_name || 'Church Staff' }}
+        · {{ selectedPost.created_at | date:'medium' }}
+      </div>
+
+      <div class="modal-actions details-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeDetails()"
+        >
+          Close
+        </button>
+
+        <button
+          class="primary-btn"
+          type="button"
+          *ngIf="selectedPost.status !== 'archived'"
+         (click)="editSelectedPost()"
+        >
+          Edit Post
+        </button>
+      </div>
+
+      <section class="media-section">
+        <div class="media-section-header">
+          <div>
+            <h3>Attached Media</h3>
+            <p>Images and videos stored in Cloudinary.</p>
+          </div>
+        </div>
+
+        <div
+          *ngIf="!selectedPost.media || selectedPost.media.length === 0"
+          class="empty-media"
+        >
+          No media attached to this post.
+        </div>
+
+        <div
+          *ngIf="selectedPost.media && selectedPost.media.length > 0"
+          class="media-grid"
+        >
+          <div
+            class="media-item"
+            *ngFor="let media of selectedPost.media"
+          >
+
+            <img
+              *ngIf="media.media_type === 'image'"
+              [src]="media.media_url"
+              [alt]="media.file_name"
+            />
+
+            <video
+              *ngIf="media.media_type === 'video'"
+              [src]="media.media_url"
+              controls
+            ></video>
+
+            <div class="media-info">
+              <strong>{{ media.file_name }}</strong>
+              <small>{{ formatFileSize(media.file_size) }}</small>
+            </div>
+
+            <button
+              class="remove-media-btn"
+              type="button"
+              (click)="removeMedia(media)"
+            >
+              Remove Media
+            </button>
+
+          </div>
+        </div>
+
+        <div class="upload-area" *ngIf="selectedPost.status !== 'archived'">
+          <label for="postMediaInput">Upload Images or Videos</label>
+
+          <input
+            id="postMediaInput"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+            multiple
+            (change)="onFilesSelected($event)"
+          />
+
+          <small>
+            Up to 10 files per upload. Images must be 10 MB or smaller;
+            total upload size is limited to 100 MB.
+          </small>
+
+          <div *ngIf="selectedFiles.length > 0" class="selected-files">
+            <strong>{{ selectedFiles.length }} file(s) selected</strong>
+
+            <ul>
+              <li *ngFor="let file of selectedFiles">
+                {{ file.name }} — {{ formatFileSize(file.size) }}
+              </li>
+            </ul>
+
+            <button
+              class="primary-btn"
+              type="button"
+              (click)="uploadMedia()"
+              [disabled]="uploading"
+            >
+              {{ uploading ? 'Uploading...' : 'Upload to Cloudinary' }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </ng-container>
+  </section>
+</div>

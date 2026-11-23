@@ -1,0 +1,336 @@
+
+<div class="staff-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Staff & Roles</h1>
+      <p>Manage staff responsibilities and role assignments in your church.</p>
+    </div>
+
+    <button
+      class="primary-btn"
+      type="button"
+      (click)="openAssignForm()"
+    >
+      + Assign Staff Role
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>{{ errorMessage }}</span>
+    <button type="button" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span>{{ successMessage }}</span>
+    <button type="button" (click)="successMessage = ''">×</button>
+  </div>
+
+  <div class="role-summary">
+    <div class="summary-card">
+      <span class="summary-icon">👥</span>
+      <div>
+        <p>Staff members</p>
+        <strong>{{ staff.length }}</strong>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <span class="summary-icon secretary-icon">📋</span>
+      <div>
+        <p>Secretaries</p>
+        <strong>
+          {{ countRole('secretary') }}
+        </strong>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <span class="summary-icon finance-icon">💰</span>
+      <div>
+        <p>Money Collectors</p>
+        <strong>
+          {{ countRole('money_collector') }}
+        </strong>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <span class="summary-icon content-icon">✍️</span>
+      <div>
+        <p>Content Creators</p>
+        <strong>
+          {{ countRole('content_creator') }}
+        </strong>
+      </div>
+    </div>
+  </div>
+
+  <section class="staff-card">
+
+    <div class="section-toolbar">
+      <div>
+        <h2>Church Staff</h2>
+        <p>View staff members and manage their assigned roles.</p>
+      </div>
+
+      <div class="search-box">
+        <input
+          type="search"
+          name="staffSearch"
+          [(ngModel)]="searchTerm"
+          placeholder="Search staff..."
+        />
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      Loading church staff...
+    </div>
+
+    <div
+      *ngIf="!loading && filteredStaff.length === 0"
+      class="empty-state"
+    >
+      <div class="empty-icon">👥</div>
+      <h3>No staff members found</h3>
+      <p>
+        There are no matching staff members. Assign a staff role to an active
+        church member to get started.
+      </p>
+
+      <button
+        class="primary-btn"
+        type="button"
+        (click)="openAssignForm()"
+      >
+        Assign Staff Role
+      </button>
+    </div>
+
+    <div
+      *ngIf="!loading && filteredStaff.length > 0"
+      class="table-wrapper"
+    >
+      <table>
+        <thead>
+          <tr>
+            <th>Staff Member</th>
+            <th>Member Number</th>
+            <th>Contact</th>
+            <th>Assigned Roles</th>
+            <th>Membership</th>
+            <th>Joined</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let person of filteredStaff; trackBy: trackByMembership">
+            <td>
+              <div class="staff-person">
+                <div class="avatar">
+                  {{ person.full_name.charAt(0).toUpperCase() }}
+                </div>
+
+                <div>
+                  <strong>{{ person.full_name }}</strong>
+                  <small>{{ person.email || 'No email address' }}</small>
+                </div>
+              </div>
+            </td>
+
+            <td>{{ person.member_number || '—' }}</td>
+
+            <td>{{ person.phone }}</td>
+
+            <td>
+              <div class="role-list">
+                <span
+                  *ngFor="let role of person.staff_roles"
+                  class="role-badge"
+                  [ngClass]="getRoleClass(role)"
+                >
+                  {{ formatRole(role) }}
+
+                  <button
+                    *ngIf="isAssignableRole(role)"
+                    type="button"
+                    title="Remove role"
+                    aria-label="Remove role"
+                    (click)="removeRole(person, role)"
+                  >
+                    ×
+                  </button>
+                </span>
+
+                <span
+                  *ngIf="person.staff_roles.length === 0"
+                  class="no-role"
+                >
+                  No staff roles
+                </span>
+              </div>
+            </td>
+
+            <td>
+              <span
+                class="membership-status"
+                [class.active]="person.membership_status === 'active'"
+                [class.inactive]="person.membership_status !== 'active'"
+              >
+                {{ person.membership_status }}
+              </span>
+            </td>
+
+            <td>{{ person.joined_at | date:'mediumDate' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-footer" *ngIf="!loading && filteredStaff.length > 0">
+      Showing {{ filteredStaff.length }} staff member(s)
+    </div>
+
+  </section>
+
+  <section class="role-information">
+    <div class="role-information-header">
+      <div>
+        <h2>Available Staff Roles</h2>
+        <p>These are the roles that can be assigned from this page.</p>
+      </div>
+    </div>
+
+    <div class="role-information-grid">
+      <div class="role-information-card">
+        <div class="role-information-icon secretary-icon">📋</div>
+        <div>
+          <h3>Secretary</h3>
+          <p>Manages church records and administrative activities.</p>
+        </div>
+      </div>
+
+      <div class="role-information-card">
+        <div class="role-information-icon finance-icon">💰</div>
+        <div>
+          <h3>Money Collector</h3>
+          <p>Handles permitted contribution and financial operations.</p>
+        </div>
+      </div>
+
+      <div class="role-information-card">
+        <div class="role-information-icon content-icon">✍️</div>
+        <div>
+          <h3>Content Creator</h3>
+          <p>Creates and manages permitted church content.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ASSIGN ROLE MODAL -->
+<div
+  class="modal-backdrop"
+  *ngIf="showAssignForm"
+  (click)="closeAssignForm()"
+>
+  <section class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2>Assign Staff Role</h2>
+        <p>Select an active church member and assign a role.</p>
+      </div>
+
+      <button
+        type="button"
+        class="close-btn"
+        (click)="closeAssignForm()"
+      >
+        ×
+      </button>
+    </div>
+
+    <form (ngSubmit)="assignRole()">
+
+      <div class="form-group">
+        <label>Select Member *</label>
+
+        <select
+          name="membershipId"
+          [(ngModel)]="selectedMembershipId"
+          required
+          [disabled]="loadingMembers"
+        >
+          <option value="">
+            {{ loadingMembers ? 'Loading members...' : 'Choose a member' }}
+          </option>
+
+          <option
+            *ngFor="let member of availableMembers"
+            [value]="member.membership_id"
+          >
+            {{ member.full_name }} — {{ member.member_number || member.phone }}
+          </option>
+        </select>
+
+        <small *ngIf="!loadingMembers && availableMembers.length === 0">
+          No active members are available for assignment.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Select Role *</label>
+
+        <select
+          name="roleName"
+          [(ngModel)]="selectedRole"
+          required
+        >
+          <option
+            *ngFor="let role of assignableRoles"
+            [value]="role.value"
+          >
+            {{ role.label }}
+          </option>
+        </select>
+      </div>
+
+      
+<div class="role-description">
+  <strong>{{ selectedRoleLabel }}</strong>
+  <p>{{ selectedRoleDescription }}</p>
+</div>
+
+
+      <div class="form-note">
+        Assigning a role does not create a new user account or change the
+        member's existing account. The member must have an active membership
+        in this church.
+      </div>
+
+      <div class="modal-actions">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeAssignForm()"
+          [disabled]="saving"
+        >
+          Cancel
+        </button>
+
+        <button
+          class="primary-btn"
+          type="submit"
+          [disabled]="saving || loadingMembers || availableMembers.length === 0"
+        >
+          {{ saving ? 'Assigning...' : 'Assign Role' }}
+        </button>
+      </div>
+
+    </form>
+  </section>
+</div>
