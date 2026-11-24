@@ -42,6 +42,8 @@ import {
   removePost,
   getPublishedFeed,
   getPublishedPostDetails,
+  likePublishedPost,
+  unlikePublishedPost,
 } from "./content.controller.js";
 import {
   getChurchMediaLibrary,
@@ -377,6 +379,20 @@ router.get(
   authenticate,
   requireChurchPermission("content.read_published"),
   getPublishedPostDetails
+);
+
+router.put(
+  "/:churchId/content/posts/published/:postId/like",
+  authenticate,
+  requireChurchPermission("content.read_published"),
+  likePublishedPost
+);
+
+router.delete(
+  "/:churchId/content/posts/published/:postId/like",
+  authenticate,
+  requireChurchPermission("content.read_published"),
+  unlikePublishedPost
 );
 
 // Church Admin and Content Creator can manage posts.

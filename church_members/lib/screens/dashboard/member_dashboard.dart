@@ -10,6 +10,7 @@ import '../../services/member_service.dart';
 import '../../services/payment_service.dart';
 import '../../services/post_service.dart';
 import '../../widgets/content_media_gallery.dart';
+import '../../widgets/post_like_button.dart';
 import '../auth/login_screen.dart';
 import '../posts/post_details_screen.dart';
 import 'member_payments_page.dart';
@@ -226,7 +227,12 @@ class _HomeTab extends StatelessWidget {
                 }
                 return Column(
                   children: posts.take(3).map((post) {
-                    return _ContentCard(data: post, type: 'post');
+                    return _ContentCard(
+                      data: post,
+                      type: 'post',
+                      churchId: churchId,
+                      postService: postService,
+                    );
                   }).toList(),
                 );
               },
@@ -527,6 +533,8 @@ class _PostsTab extends StatelessWidget {
       icon: Icons.article_outlined,
       future: postService.getPublishedPosts(churchId!),
       type: 'post',
+      churchId: churchId,
+      postService: postService,
     );
   }
 }
@@ -801,6 +809,8 @@ class _DataListPage extends StatelessWidget {
   final IconData icon;
   final Future<List<Map<String, dynamic>>> future;
   final String type;
+  final String? churchId;
+  final PostService? postService;
 
   const _DataListPage({
     required this.title,
@@ -808,6 +818,8 @@ class _DataListPage extends StatelessWidget {
     required this.icon,
     required this.future,
     required this.type,
+    this.churchId,
+    this.postService,
   });
 
   @override
@@ -844,7 +856,12 @@ class _DataListPage extends StatelessWidget {
               )
             else
               ...(snapshot.data ?? []).map(
-                (item) => _ContentCard(data: item, type: type),
+                (item) => _ContentCard(
+                  data: item,
+                  type: type,
+                  churchId: churchId,
+                  postService: postService,
+                ),
               ),
           ],
         );
@@ -922,14 +939,30 @@ class _PageTitle extends StatelessWidget {
   }
 }
 
-class _ContentCard extends StatelessWidget {
+class _ContentCard extends StatefulWidget {
   final Map<String, dynamic> data;
   final String type;
+  final String? churchId;
+  final PostService? postService;
 
-  const _ContentCard({required this.data, required this.type});
+  const _ContentCard({
+    required this.data,
+    required this.type,
+    this.churchId,
+    this.postService,
+  });
 
   @override
+  State<_ContentCard> createState() => _ContentCardState();
+}
+
+class _ContentCardState extends State<_ContentCard> {
+  @override
   Widget build(BuildContext context) {
+    final data = widget.data;
+    final type = widget.type;
+    final churchId = widget.churchId;
+    final postService = widget.postService;
     final isPost = type == 'post';
     final title = _firstValue(
       data,
@@ -954,6 +987,9 @@ class _ContentCard extends StatelessWidget {
     ], '');
     final location = _firstValue(data, ['location', 'venue', 'address'], '');
     final postType = _firstValue(data, ['post_type', 'type'], '');
+    final postId = _firstValue(data, ['id', 'post_id', 'postId'], '');
+    final canLike =
+        isPost && postId.isNotEmpty && churchId != null && postService != null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
@@ -1060,24 +1096,41 @@ class _ContentCard extends StatelessWidget {
                 const SizedBox(height: 14),
                 const Divider(),
                 const SizedBox(height: 11),
-                const Row(
+                Row(
                   children: [
-                    Icon(
+                    if (canLike)
+                      PostLikeButton(
+                        churchId: churchId,
+                        postId: postId,
+                        postService: postService,
+                        initiallyLiked: _boolValue(data, [
+                          'liked_by_me',
+                          'likedByMe',
+                        ]),
+                        initialLikeCount: _intValue(data, [
+                          'like_count',
+                          'likeCount',
+                        ]),
+                        onChanged: _applyLikeState,
+                        showLabel: false,
+                      ),
+                    const Spacer(),
+                    const Icon(
                       Icons.menu_book_rounded,
                       color: AppColors.primary,
                       size: 18,
                     ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Read full post',
+                    const SizedBox(width: 7),
+                    const Text(
+                      'Read post',
                       style: TextStyle(
                         color: AppColors.primary,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    Spacer(),
-                    Icon(
+                    const SizedBox(width: 5),
+                    const Icon(
                       Icons.arrow_forward_rounded,
                       color: AppColors.primary,
                       size: 18,
@@ -1092,10 +1145,27 @@ class _ContentCard extends StatelessWidget {
     );
   }
 
-  void _openPostDetails(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => PostDetailsScreen(post: data)),
+  Future<void> _openPostDetails(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PostDetailsScreen(
+          post: widget.data,
+          churchId: widget.churchId,
+          postService: widget.postService,
+        ),
+      ),
     );
+
+    if (mounted) setState(() {});
+  }
+
+  void _applyLikeState(PostLikeState state) {
+    if (!mounted) return;
+
+    setState(() {
+      widget.data['liked_by_me'] = state.liked;
+      widget.data['like_count'] = state.likeCount;
+    });
   }
 }
 
@@ -1304,6 +1374,27 @@ String _firstValue(
     }
   }
   return fallback;
+}
+
+bool _boolValue(Map<String, dynamic> data, List<String> keys) {
+  for (final key in keys) {
+    final value = data[key];
+    if (value is bool) return value;
+    if (value != null) return value.toString().toLowerCase() == 'true';
+  }
+
+  return false;
+}
+
+int _intValue(Map<String, dynamic> data, List<String> keys) {
+  for (final key in keys) {
+    final value = data[key];
+    if (value is num) return value.toInt();
+    final parsed = int.tryParse(value?.toString() ?? '');
+    if (parsed != null) return parsed;
+  }
+
+  return 0;
 }
 
 String _formatDate(String value) {

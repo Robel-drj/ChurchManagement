@@ -36,3 +36,17 @@ test("notification inbox route precedes the notification ID route", () => {
     "fixed paths must be registered before parameterized paths"
   );
 });
+
+test("published posts expose idempotent like and unlike routes", () => {
+  const likePath = "/:churchId/content/posts/published/:postId/like";
+  const likeRoutes = churchRoutes.stack.filter(
+    (layer) => layer.route?.path === likePath
+  ).map((layer) => layer.route);
+
+  assert.equal(likeRoutes.length, 2, "like and unlike routes are registered");
+  assert.ok(likeRoutes.some((route) => route.methods.put), "PUT likes a post");
+  assert.ok(
+    likeRoutes.some((route) => route.methods.delete),
+    "DELETE removes a post like"
+  );
+});

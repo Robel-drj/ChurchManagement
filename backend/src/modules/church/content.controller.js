@@ -10,6 +10,7 @@ import {
   deletePost,
   listPublishedPosts,
   getPublishedPost,
+  setPublishedPostLike,
 } from "./content.service.js";
 
 import {
@@ -281,6 +282,7 @@ export async function getPublishedFeed(req, res, next) {
 
     const result = await listPublishedPosts(
       req.church.id,
+      req.churchMembership.id,
       validation.data
     );
 
@@ -306,7 +308,8 @@ export async function getPublishedPostDetails(req, res, next) {
 
     const post = await getPublishedPost(
       req.church.id,
-      idValidation.data
+      idValidation.data,
+      req.churchMembership.id
     );
 
     return res.status(200).json({
@@ -316,4 +319,40 @@ export async function getPublishedPostDetails(req, res, next) {
   } catch (error) {
     next(error);
   }
+}
+
+async function changePublishedPostLike(req, res, next, liked) {
+  try {
+    const idValidation = validatePostId(req.params.postId);
+
+    if (!idValidation.success) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid post ID is required.",
+      });
+    }
+
+    const state = await setPublishedPostLike(
+      req.church.id,
+      idValidation.data,
+      req.churchMembership.id,
+      liked
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: liked ? "Post liked." : "Post like removed.",
+      data: state,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function likePublishedPost(req, res, next) {
+  return changePublishedPostLike(req, res, next, true);
+}
+
+export async function unlikePublishedPost(req, res, next) {
+  return changePublishedPostLike(req, res, next, false);
 }

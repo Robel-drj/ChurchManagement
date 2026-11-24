@@ -534,7 +534,7 @@ export async function deletePost(churchId, postId) {
   }
 }
 
-export async function listPublishedPosts(churchId, filters) {
+export async function listPublishedPosts(churchId, membershipId, filters) {
   const { page, limit, search, post_type } = filters;
   const conditions = [
     "p.church_id = $1",
@@ -564,7 +564,7 @@ export async function listPublishedPosts(churchId, filters) {
   );
 
   const offset = (page - 1) * limit;
-  const listValues = [...values, limit, offset];
+  const listValues = [...values, membershipId, limit, offset];
 
   const result = await pool.query(
     `SELECT
@@ -573,6 +573,19 @@ export async function listPublishedPosts(churchId, filters) {
        p.content,
        p.post_type,
        p.published_at,
+       (
+         SELECT COUNT(*)::int
+         FROM post_likes pl
+         WHERE pl.church_id = p.church_id
+           AND pl.post_id = p.id
+       ) AS like_count,
+       EXISTS (
+         SELECT 1
+         FROM post_likes pl
+         WHERE pl.church_id = p.church_id
+           AND pl.post_id = p.id
+           AND pl.membership_id = $${values.length + 1}
+       ) AS liked_by_me,
        COALESCE(
          json_agg(
            json_build_object(
@@ -591,11 +604,11 @@ export async function listPublishedPosts(churchId, filters) {
      LEFT JOIN post_media pm
        ON pm.post_id = p.id
       AND pm.church_id = p.church_id
-     WHERE ${whereClause}
-     GROUP BY p.id
-     ORDER BY p.published_at DESC
-     LIMIT $${values.length + 1}
-     OFFSET $${values.length + 2}`,
+      WHERE ${whereClause}
+      GROUP BY p.id
+      ORDER BY p.published_at DESC
+      LIMIT $${values.length + 2}
+      OFFSET $${values.length + 3}`,
     listValues
   );
 
@@ -610,7 +623,7 @@ export async function listPublishedPosts(churchId, filters) {
   };
 }
 
-export async function getPublishedPost(churchId, postId) {
+export async function getPublishedPost(churchId, postId, membershipId) {
   const result = await pool.query(
     `SELECT
        p.id,
@@ -618,6 +631,19 @@ export async function getPublishedPost(churchId, postId) {
        p.content,
        p.post_type,
        p.published_at,
+       (
+         SELECT COUNT(*)::int
+         FROM post_likes pl
+         WHERE pl.church_id = p.church_id
+           AND pl.post_id = p.id
+       ) AS like_count,
+       EXISTS (
+         SELECT 1
+         FROM post_likes pl
+         WHERE pl.church_id = p.church_id
+           AND pl.post_id = p.id
+           AND pl.membership_id = $3
+       ) AS liked_by_me,
        COALESCE(
          json_agg(
            json_build_object(
@@ -639,8 +665,8 @@ export async function getPublishedPost(churchId, postId) {
      WHERE p.id = $1
        AND p.church_id = $2
        AND p.status = 'published'
-     GROUP BY p.id`,
-    [postId, churchId]
+      GROUP BY p.id`,
+    [postId, churchId, membershipId]
   );
 
   if (result.rowCount === 0) {
@@ -648,4 +674,85 @@ export async function getPublishedPost(churchId, postId) {
   }
 
   return result.rows[0];
+}
+
+export async function setPublishedPostLike(
+  churchId,
+  postId,
+  membershipId,
+  liked
+) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const postResult = await client.query(
+      `SELECT id
+       FROM posts
+       WHERE id = $1
+         AND church_id = $2
+         AND status = 'published'
+       FOR SHARE`,
+      [postId, churchId]
+    );
+
+    if (postResult.rowCount === 0) {
+      throw createHttpError("Published post not found.", 404);
+    }
+
+    const membershipResult = await client.query(
+      `SELECT id
+       FROM church_memberships
+       WHERE id = $1
+         AND church_id = $2
+         AND membership_status = 'active'
+       FOR SHARE`,
+      [membershipId, churchId]
+    );
+
+    if (membershipResult.rowCount === 0) {
+      throw createHttpError("Active church membership not found.", 403);
+    }
+
+    if (liked) {
+      await client.query(
+        `INSERT INTO post_likes (church_id, post_id, membership_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (church_id, post_id, membership_id) DO NOTHING`,
+        [churchId, postId, membershipId]
+      );
+    } else {
+      await client.query(
+        `DELETE FROM post_likes
+         WHERE church_id = $1
+           AND post_id = $2
+           AND membership_id = $3`,
+        [churchId, postId, membershipId]
+      );
+    }
+
+    const stateResult = await client.query(
+      `SELECT
+         COUNT(*)::int AS like_count,
+         BOOL_OR(membership_id = $3) AS liked
+       FROM post_likes
+       WHERE church_id = $1
+         AND post_id = $2`,
+      [churchId, postId, membershipId]
+    );
+
+    await client.query("COMMIT");
+
+    return {
+      post_id: postId,
+      liked: stateResult.rows[0].liked ?? false,
+      like_count: stateResult.rows[0].like_count,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }

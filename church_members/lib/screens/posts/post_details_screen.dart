@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../services/post_service.dart';
 import '../../widgets/content_media_gallery.dart';
+import '../../widgets/post_like_button.dart';
 
 class PostDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> post;
+  final String? churchId;
+  final PostService? postService;
 
-  const PostDetailsScreen({super.key, required this.post});
+  const PostDetailsScreen({
+    super.key,
+    required this.post,
+    this.churchId,
+    this.postService,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +41,9 @@ class PostDetailsScreen extends StatelessWidget {
       'author_name',
       'created_by_name',
     ], '');
+    final postId = _firstPostValue(post, const ['id', 'post_id', 'postId'], '');
+    final canLike =
+        postId.isNotEmpty && churchId != null && postService != null;
     final media = post['media'];
     final hasMedia = media is List && media.isNotEmpty;
     final hasImage = _containsImage(media);
@@ -126,6 +138,26 @@ class PostDetailsScreen extends StatelessWidget {
               ),
             ],
           ],
+          if (canLike) ...[
+            const SizedBox(height: 18),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: PostLikeButton(
+                churchId: churchId!,
+                postId: postId,
+                postService: postService!,
+                initiallyLiked: _postBoolValue(post, const [
+                  'liked_by_me',
+                  'likedByMe',
+                ]),
+                initialLikeCount: _postIntValue(post, const [
+                  'like_count',
+                  'likeCount',
+                ]),
+                onChanged: _applyLikeState,
+              ),
+            ),
+          ],
           const SizedBox(height: 22),
           Container(
             padding: const EdgeInsets.all(20),
@@ -176,6 +208,11 @@ class PostDetailsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _applyLikeState(PostLikeState state) {
+    post['liked_by_me'] = state.liked;
+    post['like_count'] = state.likeCount;
   }
 }
 
@@ -252,6 +289,27 @@ String _formatPostDate(String value) {
   if (parsed == null) return value;
 
   return DateFormat('MMMM d, y • h:mm a').format(parsed.toLocal());
+}
+
+bool _postBoolValue(Map<String, dynamic> data, List<String> keys) {
+  for (final key in keys) {
+    final value = data[key];
+    if (value is bool) return value;
+    if (value != null) return value.toString().toLowerCase() == 'true';
+  }
+
+  return false;
+}
+
+int _postIntValue(Map<String, dynamic> data, List<String> keys) {
+  for (final key in keys) {
+    final value = data[key];
+    if (value is num) return value.toInt();
+    final parsed = int.tryParse(value?.toString() ?? '');
+    if (parsed != null) return parsed;
+  }
+
+  return 0;
 }
 
 String _titleCase(String value) {
