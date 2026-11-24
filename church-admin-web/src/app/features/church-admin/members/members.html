@@ -129,18 +129,20 @@
                   *ngIf="member.membership_status === 'active'"
                   class="suspend-btn"
                   type="button"
+                  [disabled]="isMembershipStatusUpdating(member)"
                   (click)="toggleMembershipStatus(member)"
                 >
-                  Suspend
+                  {{ isMembershipStatusUpdating(member) ? 'Suspending...' : 'Suspend' }}
                 </button>
 
                 <button
                   *ngIf="member.membership_status === 'suspended'"
                   class="activate-btn"
                   type="button"
+                  [disabled]="isMembershipStatusUpdating(member)"
                   (click)="toggleMembershipStatus(member)"
                 >
-                  Activate
+                  {{ isMembershipStatusUpdating(member) ? 'Activating...' : 'Activate' }}
                 </button>
               </div>
             </td>

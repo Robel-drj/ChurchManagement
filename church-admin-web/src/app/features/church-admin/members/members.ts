@@ -31,6 +31,7 @@ export class Members implements OnInit {
   loading = false;
   saving = false;
   detailsLoading = false;
+  statusUpdatingMembershipId: string | null = null;
 
   errorMessage = '';
   successMessage = '';
@@ -345,6 +346,10 @@ export class Members implements OnInit {
   }
 
   toggleMembershipStatus(member: ChurchMember): void {
+    if (this.statusUpdatingMembershipId === member.membership_id) {
+      return;
+    }
+
     const nextStatus =
       member.membership_status === 'active' ? 'suspended' : 'active';
 
@@ -359,6 +364,7 @@ export class Members implements OnInit {
 
     this.errorMessage = '';
     this.successMessage = '';
+    this.statusUpdatingMembershipId = member.membership_id;
 
     this.cdr.markForCheck();
     this.memberService
@@ -367,24 +373,33 @@ export class Members implements OnInit {
       })
       .subscribe({
         next: (response) => {
+          this.statusUpdatingMembershipId = null;
+          member.membership_status = nextStatus;
           this.successMessage =
             response.message || `Membership ${action}d successfully.`;
-
-          this.loadMembers();
 
           if (
             this.selectedMember?.membership_id === member.membership_id
           ) {
             this.selectedMember.membership_status = nextStatus;
           }
+
+          this.cdr.markForCheck();
+          this.loadMembers();
         },
         error: (error) => {
+          this.statusUpdatingMembershipId = null;
           this.errorMessage = this.getErrorMessage(
             error,
             `Unable to ${action} this membership.`
           );
+          this.cdr.markForCheck();
         },
       });
+  }
+
+  isMembershipStatusUpdating(member: ChurchMember): boolean {
+    return this.statusUpdatingMembershipId === member.membership_id;
   }
 
   getStatusClass(status: string): string {
