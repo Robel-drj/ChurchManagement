@@ -11,6 +11,7 @@ import '../../services/payment_service.dart';
 import '../../services/post_service.dart';
 import '../../widgets/content_media_gallery.dart';
 import '../auth/login_screen.dart';
+import '../posts/post_details_screen.dart';
 import 'member_payments_page.dart';
 
 class MemberDashboard extends StatefulWidget {
@@ -956,103 +957,144 @@ class _ContentCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isPost
-                        ? const Color(0xFFE0E7FF)
-                        : const Color(0xFFCCFBF1),
-                    borderRadius: BorderRadius.circular(14),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: isPost ? () => _openPostDetails(context) : null,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isPost
+                          ? const Color(0xFFE0E7FF)
+                          : const Color(0xFFCCFBF1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      isPost
+                          ? Icons.campaign_outlined
+                          : Icons.calendar_month_outlined,
+                      color: isPost ? AppColors.primary : AppColors.secondary,
+                      size: 22,
+                    ),
                   ),
-                  child: Icon(
-                    isPost
-                        ? Icons.campaign_outlined
-                        : Icons.calendar_month_outlined,
-                    color: isPost ? AppColors.primary : AppColors.secondary,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: 7,
-                        runSpacing: 5,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          _TypeBadge(label: isPost ? 'POST' : 'EVENT'),
-                          if (isPost && postType.isNotEmpty)
-                            Text(
-                              _titleCase(postType),
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 7,
+                          runSpacing: 5,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _TypeBadge(label: isPost ? 'POST' : 'EVENT'),
+                            if (isPost && postType.isNotEmpty)
+                              Text(
+                                _titleCase(postType),
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 17,
-                          height: 1.25,
-                          letterSpacing: -0.2,
+                          ],
                         ),
+                        const SizedBox(height: 6),
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 17,
+                            height: 1.25,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (rawDate.isNotEmpty || (!isPost && location.isNotEmpty)) ...[
+                const SizedBox(height: 13),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    if (rawDate.isNotEmpty)
+                      _MetadataItem(
+                        icon: Icons.schedule_rounded,
+                        label: _formatDate(rawDate),
                       ),
-                    ],
+                    if (!isPost && location.isNotEmpty)
+                      _MetadataItem(
+                        icon: Icons.location_on_outlined,
+                        label: location,
+                      ),
+                  ],
+                ),
+              ],
+              ContentMediaGallery(media: data['media'], enableDownload: isPost),
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 13),
+                Text(
+                  description,
+                  maxLines: isPost ? 3 : null,
+                  overflow: isPost ? TextOverflow.ellipsis : null,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    height: 1.55,
                   ),
                 ),
               ],
-            ),
-            if (rawDate.isNotEmpty || (!isPost && location.isNotEmpty)) ...[
-              const SizedBox(height: 13),
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                children: [
-                  if (rawDate.isNotEmpty)
-                    _MetadataItem(
-                      icon: Icons.schedule_rounded,
-                      label: _formatDate(rawDate),
+              if (isPost) ...[
+                const SizedBox(height: 14),
+                const Divider(),
+                const SizedBox(height: 11),
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.menu_book_rounded,
+                      color: AppColors.primary,
+                      size: 18,
                     ),
-                  if (!isPost && location.isNotEmpty)
-                    _MetadataItem(
-                      icon: Icons.location_on_outlined,
-                      label: location,
+                    SizedBox(width: 8),
+                    Text(
+                      'Read full post',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                ],
-              ),
-            ],
-            ContentMediaGallery(media: data['media']),
-            if (description.isNotEmpty) ...[
-              const SizedBox(height: 13),
-              Text(
-                description,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 14,
-                  height: 1.55,
+                    Spacer(),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
+                  ],
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  void _openPostDetails(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => PostDetailsScreen(post: data)),
     );
   }
 }
