@@ -65,7 +65,7 @@ app.get("/api/health", (req, res) => {
 });
 
 const authLimiter = rateLimit({
-  windowMs: 25 * 60 * 1000,
+  windowMs: 35 * 60 * 1000,
   limit: 30,
   standardHeaders: "draft-7",
   legacyHeaders: false,
