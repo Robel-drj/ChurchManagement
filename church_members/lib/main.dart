@@ -12,6 +12,7 @@ import 'services/auth_service.dart';
 import 'services/church_service.dart';
 import 'services/event_service.dart';
 import 'services/member_service.dart';
+import 'services/notification_service.dart';
 import 'services/payment_service.dart';
 import 'services/post_service.dart';
 
@@ -23,6 +24,7 @@ void main() {
     apiClient: apiClient,
     tokenStorage: tokenStorage,
   );
+  final notificationService = NotificationService(apiClient);
   final churchService = ChurchService(apiClient);
   final memberService = MemberService(apiClient);
   final postService = PostService(apiClient);
@@ -36,6 +38,7 @@ void main() {
       postService: postService,
       eventService: eventService,
       paymentService: paymentService,
+      notificationService: notificationService,
     ),
   );
 }
@@ -47,6 +50,7 @@ class ChurchMemberApp extends StatelessWidget {
   final PostService postService;
   final EventService eventService;
   final PaymentService paymentService;
+  final NotificationService notificationService;
 
   const ChurchMemberApp({
     super.key,
@@ -56,6 +60,7 @@ class ChurchMemberApp extends StatelessWidget {
     required this.postService,
     required this.eventService,
     required this.paymentService,
+    required this.notificationService,
   });
 
   @override
@@ -71,6 +76,7 @@ class ChurchMemberApp extends StatelessWidget {
         postService: postService,
         eventService: eventService,
         paymentService: paymentService,
+        notificationService: notificationService,
       ),
     );
   }
@@ -83,6 +89,7 @@ class _SessionGate extends StatefulWidget {
   final PostService postService;
   final EventService eventService;
   final PaymentService paymentService;
+  final NotificationService notificationService;
 
   const _SessionGate({
     required this.authService,
@@ -91,6 +98,7 @@ class _SessionGate extends StatefulWidget {
     required this.postService,
     required this.eventService,
     required this.paymentService,
+    required this.notificationService,
   });
 
   @override
@@ -140,6 +148,7 @@ class _SessionGateState extends State<_SessionGate> {
             postService: widget.postService,
             eventService: widget.eventService,
             paymentService: widget.paymentService,
+            notificationService: widget.notificationService,
           );
         }
 
@@ -151,6 +160,7 @@ class _SessionGateState extends State<_SessionGate> {
           postService: widget.postService,
           eventService: widget.eventService,
           paymentService: widget.paymentService,
+          notificationService: widget.notificationService,
         );
       },
     );
