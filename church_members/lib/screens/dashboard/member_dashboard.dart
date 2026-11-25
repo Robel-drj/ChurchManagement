@@ -349,7 +349,7 @@ class _HomeHeader extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _firstName(user.fullName),
+                          _firstName(user.fullName.toUpperCase()),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -661,7 +661,7 @@ class _ProfileTab extends StatelessWidget {
                   border: Border.all(color: Colors.white30, width: 2),
                 ),
                 child: Text(
-                  _initials(user.fullName),
+                  _initials(user.fullName.toUpperCase()),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 25,
@@ -671,7 +671,7 @@ class _ProfileTab extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                user.fullName,
+                user.fullName.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
