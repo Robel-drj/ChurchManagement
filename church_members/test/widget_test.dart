@@ -6,6 +6,7 @@ import 'package:church_members/services/auth_service.dart';
 import 'package:church_members/services/church_service.dart';
 import 'package:church_members/services/event_service.dart';
 import 'package:church_members/services/member_service.dart';
+import 'package:church_members/services/notification_service.dart';
 import 'package:church_members/services/payment_service.dart';
 import 'package:church_members/services/post_service.dart';
 
@@ -55,6 +56,7 @@ void main() {
         postService: PostService(apiClient),
         eventService: EventService(apiClient),
         paymentService: PaymentService(apiClient),
+        notificationService: NotificationService(apiClient),
       ),
     );
     await tester.pumpAndSettle();

@@ -7,6 +7,7 @@ import '../../services/auth_service.dart';
 import '../../services/church_service.dart';
 import '../../services/event_service.dart';
 import '../../services/member_service.dart';
+import '../../services/notification_service.dart';
 import '../../services/payment_service.dart';
 import '../../services/post_service.dart';
 import '../../widgets/content_media_gallery.dart';
@@ -14,6 +15,7 @@ import '../../widgets/post_like_button.dart';
 import '../auth/login_screen.dart';
 import '../posts/post_details_screen.dart';
 import 'member_payments_page.dart';
+import 'notification_bell_button.dart';
 
 class MemberDashboard extends StatefulWidget {
   final UserModel user;
@@ -23,6 +25,7 @@ class MemberDashboard extends StatefulWidget {
   final PostService postService;
   final EventService eventService;
   final PaymentService paymentService;
+  final NotificationService notificationService;
 
   const MemberDashboard({
     super.key,
@@ -33,6 +36,7 @@ class MemberDashboard extends StatefulWidget {
     required this.postService,
     required this.eventService,
     required this.paymentService,
+    required this.notificationService,
   });
 
   @override
@@ -81,6 +85,7 @@ class _MemberDashboardState extends State<MemberDashboard> {
           postService: widget.postService,
           eventService: widget.eventService,
           paymentService: widget.paymentService,
+          notificationService: widget.notificationService,
         ),
       ),
       (_) => false,
@@ -97,6 +102,7 @@ class _MemberDashboardState extends State<MemberDashboard> {
         churchId: churchId,
         postService: widget.postService,
         eventService: widget.eventService,
+        notificationService: widget.notificationService,
       ),
       _PostsTab(churchId: churchId, postService: widget.postService),
       _EventsTab(churchId: churchId, eventService: widget.eventService),
@@ -167,12 +173,14 @@ class _HomeTab extends StatelessWidget {
   final String? churchId;
   final PostService postService;
   final EventService eventService;
+  final NotificationService notificationService;
 
   const _HomeTab({
     required this.user,
     required this.churchId,
     required this.postService,
     required this.eventService,
+    required this.notificationService,
   });
 
   @override
@@ -189,7 +197,11 @@ class _HomeTab extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
         children: [
-          _HomeHeader(user: user),
+          _HomeHeader(
+            user: user,
+            churchId: churchId,
+            notificationService: notificationService,
+          ),
           const SizedBox(height: 24),
           const _SectionHeader(
             icon: Icons.campaign_outlined,
@@ -281,8 +293,14 @@ class _HomeTab extends StatelessWidget {
 
 class _HomeHeader extends StatelessWidget {
   final UserModel user;
+  final String? churchId;
+  final NotificationService notificationService;
 
-  const _HomeHeader({required this.user});
+  const _HomeHeader({
+    required this.user,
+    required this.churchId,
+    required this.notificationService,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -344,7 +362,16 @@ class _HomeHeader extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  if (churchId != null) ...[
+                    IconTheme(
+                      data: const IconThemeData(color: Colors.white),
+                      child: NotificationBellButton(
+                        churchId: churchId!,
+                        notificationService: notificationService,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   Container(
                     width: 52,
                     height: 52,

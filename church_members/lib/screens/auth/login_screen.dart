@@ -6,6 +6,7 @@ import '../../services/auth_service.dart';
 import '../../services/church_service.dart';
 import '../../services/event_service.dart';
 import '../../services/member_service.dart';
+import '../../services/notification_service.dart';
 import '../../services/payment_service.dart';
 import '../../services/post_service.dart';
 import '../../widgets/app_button.dart';
@@ -20,6 +21,7 @@ class LoginScreen extends StatefulWidget {
   final PostService postService;
   final EventService eventService;
   final PaymentService paymentService;
+  final NotificationService notificationService;
 
   const LoginScreen({
     super.key,
@@ -29,6 +31,7 @@ class LoginScreen extends StatefulWidget {
     required this.postService,
     required this.eventService,
     required this.paymentService,
+    required this.notificationService,
   });
 
   @override
@@ -91,6 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
             postService: widget.postService,
             eventService: widget.eventService,
             paymentService: widget.paymentService,
+            notificationService: widget.notificationService,
           ),
         ),
         (route) => false,
