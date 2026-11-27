@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../services/notification_service.dart';
 import 'member_notifications_page.dart';
 
@@ -68,13 +69,101 @@ class _NotificationBellButtonState extends State<NotificationBellButton> {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: 'Notifications',
-      onPressed: _openInbox,
-      icon: Badge(
-        isLabelVisible: _unreadCount > 0,
-        label: Text(_unreadCount > 99 ? '99+' : _unreadCount.toString()),
-        child: const Icon(Icons.notifications_outlined),
+    final hasUnread = _unreadCount > 0;
+    final badgeText = _unreadCount > 99 ? '99+' : _unreadCount.toString();
+
+    return Tooltip(
+      message: 'Notifications',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _openInbox,
+          borderRadius: BorderRadius.circular(50),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: hasUnread
+                  ? AppColors.primary.withValues(alpha: 0.12)
+                  : AppColors.surfaceMuted,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: hasUnread
+                    ? AppColors.primary.withValues(alpha: 0.25)
+                    : AppColors.border.withValues(alpha: 0.7),
+              ),
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Icon(
+                  hasUnread
+                      ? Icons.notifications_rounded
+                      : Icons.notifications_none_rounded,
+                  size: 22,
+                  color: hasUnread ? AppColors.primary : AppColors.textPrimary,
+                ),
+                if (hasUnread)
+                  Positioned(
+                    top: -3,
+                    right: -4,
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minWidth: 19,
+                        minHeight: 19,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.surface,
+                          width: 1.8,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x33EF4444),
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        badgeText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          height: 1.0,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                  )
+                else if (_loading)
+                  Positioned(
+                    top: 9,
+                    right: 10,
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

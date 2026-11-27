@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/network/api_exceptions.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
@@ -12,14 +14,12 @@ import '../../services/payment_service.dart';
 import '../../services/post_service.dart';
 import '../../widgets/content_media_gallery.dart';
 import '../../widgets/post_like_button.dart';
-import '../auth/login_screen.dart';
 import '../auth/change_password_screen.dart';
+import '../auth/login_screen.dart';
 import '../posts/post_details_screen.dart';
 import 'member_payments_page.dart';
 import 'notification_bell_button.dart';
-import 'package:image_picker/image_picker.dart';
 
-import '../../core/network/api_exceptions.dart';
 class MemberDashboard extends StatefulWidget {
   final UserModel user;
   final AuthService authService;
@@ -48,56 +48,57 @@ class MemberDashboard extends StatefulWidget {
 
 class _MemberDashboardState extends State<MemberDashboard> {
   int _selectedIndex = 0;
-String? _uploadedPhotoUrl;
-bool _uploadingPhoto = false;
+  String? _uploadedPhotoUrl;
+  bool _uploadingPhoto = false;
 
-String? get _profilePhotoUrl {
-  final churchId = _activeChurchId;
-  if (churchId == null) return null;
-  if (_uploadedPhotoUrl != null) return _uploadedPhotoUrl;
+  String? get _profilePhotoUrl {
+    final churchId = _activeChurchId;
+    if (churchId == null) return null;
+    if (_uploadedPhotoUrl != null) return _uploadedPhotoUrl;
 
-  for (final membership in widget.user.memberships) {
-    if (membership is Map &&
-        (membership['churchId'] ?? membership['church_id']) == churchId) {
-      final url = membership['profileImage'];
-      return url is String && url.isNotEmpty ? url : null;
+    for (final membership in widget.user.memberships) {
+      if (membership is Map &&
+          (membership['churchId'] ?? membership['church_id']) == churchId) {
+        final url = membership['profileImage'];
+        return url is String && url.isNotEmpty ? url : null;
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _changeProfilePicture() async {
+    final churchId = _activeChurchId;
+    if (churchId == null || _uploadingPhoto) return;
+
+    setState(() => _uploadingPhoto = true);
+
+    try {
+      final photo = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (photo == null || !mounted) return;
+
+      final url = await widget.memberService.uploadProfilePicture(churchId, photo);
+      if (!mounted) return;
+
+      setState(() => _uploadedPhotoUrl = url);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile picture updated.')),
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not change your profile picture.')),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
     }
   }
 
-  return null;
-}
-
-Future<void> _changeProfilePicture() async {
-  final churchId = _activeChurchId;
-  if (churchId == null || _uploadingPhoto) return;
-
-  setState(() => _uploadingPhoto = true);
-
-  try {
-    final photo = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (photo == null || !mounted) return;
-
-    final url = await widget.memberService.uploadProfilePicture(churchId, photo);
-    if (!mounted) return;
-
-    setState(() => _uploadedPhotoUrl = url);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile picture updated.')),
-    );
-  } on ApiException catch (error) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error.message)),
-    );
-  } catch (_) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Could not change your profile picture.')),
-    );
-  } finally {
-    if (mounted) setState(() => _uploadingPhoto = false);
-  }
-}
   String? get _activeChurchId {
     for (final item in widget.user.memberships) {
       if (item is! Map) continue;
@@ -122,19 +123,21 @@ Future<void> _changeProfilePicture() async {
 
     return null;
   }
-Future<void> _openChangePassword() async {
-  final changed = await Navigator.of(context).push<bool>(
-    MaterialPageRoute(
-      builder: (_) => ChangePasswordScreen(authService: widget.authService),
-    ),
-  );
 
-  if (!mounted || changed != true) return;
+  Future<void> _openChangePassword() async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ChangePasswordScreen(authService: widget.authService),
+      ),
+    );
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Password changed successfully.')),
-  );
-}
+    if (!mounted || changed != true) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Password changed successfully.')),
+    );
+  }
+
   Future<void> _logout() async {
     await widget.authService.logout();
 
@@ -168,40 +171,50 @@ Future<void> _openChangePassword() async {
         eventService: widget.eventService,
         notificationService: widget.notificationService,
         photoUrl: _profilePhotoUrl,
+        onViewAllEvents: () => setState(() => _selectedIndex = 2),
+        onViewAllPosts: () => setState(() => _selectedIndex = 1),
       ),
       _PostsTab(churchId: churchId, postService: widget.postService),
       _EventsTab(churchId: churchId, eventService: widget.eventService),
       _PaymentsTab(churchId: churchId, paymentService: widget.paymentService),
-     _ProfileTab(
-  user: widget.user,
-  photoUrl: _profilePhotoUrl,
-  uploadingPhoto: _uploadingPhoto,
-  onChangePhoto: churchId == null ? null : _changeProfilePicture,
-  onLogout: _logout,
-  onChangePassword: _openChangePassword,
-),
+      _ProfileTab(
+        user: widget.user,
+        photoUrl: _profilePhotoUrl,
+        uploadingPhoto: _uploadingPhoto,
+        onChangePhoto: churchId == null ? null : _changeProfilePicture,
+        onLogout: _logout,
+        onChangePassword: _openChangePassword,
+      ),
     ];
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         bottom: false,
         child: IndexedStack(index: _selectedIndex, children: pages),
       ),
-      bottomNavigationBar: DecoratedBox(
-        decoration: const BoxDecoration(
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
           color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.border)),
-          boxShadow: [
+          border: Border(
+            top: BorderSide(color: AppColors.border.withValues(alpha: 0.8)),
+          ),
+          boxShadow: const [
             BoxShadow(
-              color: Color(0x0F101828),
-              blurRadius: 20,
-              offset: Offset(0, -6),
+              color: Color(0x0A101828),
+              blurRadius: 24,
+              offset: Offset(0, -4),
             ),
           ],
         ),
         child: SafeArea(
           top: false,
           child: NavigationBar(
+            height: 66,
+            elevation: 0,
+            backgroundColor: AppColors.surface,
+            indicatorColor: AppColors.primary.withValues(alpha: 0.12),
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             selectedIndex: _selectedIndex,
             onDestinationSelected: (index) {
               setState(() => _selectedIndex = index);
@@ -209,27 +222,27 @@ Future<void> _openChangePassword() async {
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded),
-                label: 'Home',
+                selectedIcon: Icon(Icons.home_rounded, color: AppColors.primary),
+                label: 'Feed',
               ),
               NavigationDestination(
-                icon: Icon(Icons.article_outlined),
-                selectedIcon: Icon(Icons.article_rounded),
+                icon: Icon(Icons.explore_outlined),
+                selectedIcon: Icon(Icons.explore_rounded, color: AppColors.primary),
                 label: 'Posts',
               ),
               NavigationDestination(
-                icon: Icon(Icons.event_outlined),
-                selectedIcon: Icon(Icons.event_rounded),
+                icon: Icon(Icons.calendar_today_outlined),
+                selectedIcon: Icon(Icons.calendar_month_rounded, color: AppColors.primary),
                 label: 'Events',
               ),
               NavigationDestination(
                 icon: Icon(Icons.volunteer_activism_outlined),
-                selectedIcon: Icon(Icons.volunteer_activism_rounded),
+                selectedIcon: Icon(Icons.volunteer_activism_rounded, color: AppColors.primary),
                 label: 'Giving',
               ),
               NavigationDestination(
                 icon: Icon(Icons.person_outline_rounded),
-                selectedIcon: Icon(Icons.person_rounded),
+                selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
                 label: 'Profile',
               ),
             ],
@@ -240,6 +253,10 @@ Future<void> _openChangePassword() async {
   }
 }
 
+// ============================================================================
+// HOME FEED TAB (Social App Bar + Horizontal Event Highlights + Social Feed)
+// ============================================================================
+
 class _HomeTab extends StatelessWidget {
   final UserModel user;
   final String? churchId;
@@ -247,6 +264,8 @@ class _HomeTab extends StatelessWidget {
   final EventService eventService;
   final NotificationService notificationService;
   final String? photoUrl;
+  final VoidCallback onViewAllEvents;
+  final VoidCallback onViewAllPosts;
 
   const _HomeTab({
     required this.user,
@@ -255,11 +274,14 @@ class _HomeTab extends StatelessWidget {
     required this.eventService,
     required this.notificationService,
     required this.photoUrl,
+    required this.onViewAllEvents,
+    required this.onViewAllPosts,
   });
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
+      color: AppColors.primary,
       onRefresh: () async {
         if (churchId == null) return;
         await Future.wait([
@@ -267,111 +289,245 @@ class _HomeTab extends StatelessWidget {
           eventService.getPublishedEvents(churchId!),
         ]);
       },
-      child: ListView(
+      child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
-        children: [
-          _HomeHeader(
-            user: user,
-            churchId: churchId,
-            notificationService: notificationService,
-            photoUrl: photoUrl,
+        slivers: [
+          // Sticky Social Top Bar
+          SliverAppBar(
+            floating: true,
+            snap: true,
+            elevation: 0,
+            scrolledUnderElevation: 0.5,
+            backgroundColor: AppColors.surface,
+            toolbarHeight: 68,
+            titleSpacing: 18,
+            title: _SocialTopBar(
+              user: user,
+              churchId: churchId,
+              notificationService: notificationService,
+              photoUrl: photoUrl,
+            ),
           ),
-          const SizedBox(height: 24),
-          const _SectionHeader(
-            icon: Icons.campaign_outlined,
-            title: 'Latest Posts',
-            subtitle: 'News and messages from your church',
-          ),
-          const SizedBox(height: 12),
+
           if (churchId == null)
-            const _EmptyMessage(
-              icon: Icons.link_off_rounded,
-              title: 'No active membership',
-              message: 'No active church membership was found.',
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(
+                  child: _EmptyMessage(
+                    icon: Icons.link_off_rounded,
+                    title: 'No active membership',
+                    message: 'No active church membership was found.',
+                  ),
+                ),
+              ),
             )
-          else
-            FutureBuilder<List<Map<String, dynamic>>>(
-              future: postService.getPublishedPosts(churchId!),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const _LoadingCards(count: 2);
-                }
-                if (snapshot.hasError) {
-                  return const _EmptyMessage(
-                    icon: Icons.cloud_off_outlined,
-                    title: 'Posts unavailable',
-                    message: 'Could not load the latest posts.',
-                  );
-                }
-                final posts = snapshot.data ?? [];
-                if (posts.isEmpty) {
-                  return const _EmptyMessage(
-                    icon: Icons.article_outlined,
-                    title: 'No posts yet',
-                    message: 'There are no published posts yet.',
-                  );
-                }
-                return Column(
-                  children: posts.take(3).map((post) {
-                    return _ContentCard(
-                      data: post,
-                      type: 'post',
-                      churchId: churchId,
-                      postService: postService,
+          else ...[
+            // Horizontal "Stories / Upcoming Events" Strip
+            SliverToBoxAdapter(
+              child: Container(
+                color: AppColors.surface,
+                padding: const EdgeInsets.only(top: 6, bottom: 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: Row(
+                        children: [
+                          const Text(
+                            'Upcoming Gatherings',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: onViewAllEvents,
+                            child: const Text(
+                              'See all',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FutureBuilder<List>(
+                      future: eventService.getPublishedEvents(churchId!),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return SizedBox(
+                            height: 112,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 18),
+                              itemCount: 3,
+                              separatorBuilder: (_, _) => const SizedBox(width: 12),
+                              itemBuilder: (_, _) => const _Placeholder(
+                                width: 220,
+                                height: 112,
+                                radius: 18,
+                              ),
+                            ),
+                          );
+                        }
+                        final events = snapshot.data ?? [];
+                        if (events.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceMuted,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(
+                                    Icons.event_available_outlined,
+                                    size: 18,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    'No upcoming events scheduled yet.',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+
+                        return SizedBox(
+                          height: 116,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                            itemCount: events.take(6).length,
+                            separatorBuilder: (_, _) => const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              return _EventStoryCard(
+                                event: events[index],
+                                onTap: onViewAllEvents,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Feed Section Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Community Feed',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: onViewAllPosts,
+                      child: const Text(
+                        'View all posts',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Social Feed Stream
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+              sliver: FutureBuilder<List>(
+                future: postService.getPublishedPosts(churchId!),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SliverToBoxAdapter(
+                      child: _LoadingCards(count: 2),
                     );
-                  }).toList(),
-                );
-              },
-            ),
-          const SizedBox(height: 14),
-          const _SectionHeader(
-            icon: Icons.calendar_month_outlined,
-            title: 'Upcoming Events',
-            subtitle: 'Gather, worship, and grow together',
-          ),
-          const SizedBox(height: 12),
-          if (churchId != null)
-            FutureBuilder<List<Map<String, dynamic>>>(
-              future: eventService.getPublishedEvents(churchId!),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const _LoadingCards(count: 2);
-                }
-                if (snapshot.hasError) {
-                  return const _EmptyMessage(
-                    icon: Icons.cloud_off_outlined,
-                    title: 'Events unavailable',
-                    message: 'Could not load upcoming events.',
+                  }
+                  if (snapshot.hasError) {
+                    return const SliverToBoxAdapter(
+                      child: _EmptyMessage(
+                        icon: Icons.cloud_off_outlined,
+                        title: 'Feed unavailable',
+                        message: 'Could not load the latest posts.',
+                      ),
+                    );
+                  }
+                  final posts = snapshot.data ?? [];
+                  if (posts.isEmpty) {
+                    return const SliverToBoxAdapter(
+                      child: _EmptyMessage(
+                        icon: Icons.dynamic_feed_outlined,
+                        title: 'Your feed is quiet',
+                        message: 'There are no published posts yet.',
+                      ),
+                    );
+                  }
+
+                  final visiblePosts = posts.take(5).toList();
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return _ContentCard(
+                          data: visiblePosts[index],
+                          type: 'post',
+                          churchId: churchId,
+                          postService: postService,
+                        );
+                      },
+                      childCount: visiblePosts.length,
+                    ),
                   );
-                }
-                final events = snapshot.data ?? [];
-                if (events.isEmpty) {
-                  return const _EmptyMessage(
-                    icon: Icons.event_busy_outlined,
-                    title: 'Nothing scheduled',
-                    message: 'There are no published events yet.',
-                  );
-                }
-                return Column(
-                  children: events.take(3).map((event) {
-                    return _ContentCard(data: event, type: 'event');
-                  }).toList(),
-                );
-              },
+                },
+              ),
             ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _HomeHeader extends StatelessWidget {
+class _SocialTopBar extends StatelessWidget {
   final UserModel user;
   final String? churchId;
   final NotificationService notificationService;
-final String? photoUrl;
-  const _HomeHeader({
+  final String? photoUrl;
+
+  const _SocialTopBar({
     required this.user,
     required this.churchId,
     required this.notificationService,
@@ -380,233 +536,219 @@ final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x334F46E5),
-            blurRadius: 26,
-            offset: Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          const Positioned(
-            right: -32,
-            top: -38,
-            child: _DecorativeOrb(size: 126),
-          ),
-          const Positioned(
-            right: 54,
-            bottom: -55,
-            child: _DecorativeOrb(size: 92, opacity: 0.07),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _greeting(),
-                          style: const TextStyle(
-                            color: Color(0xD9FFFFFF),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _firstName(user.fullName.toUpperCase()),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 27,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.6,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (churchId != null) ...[
-                    IconTheme(
-                      data: const IconThemeData(color: Colors.white),
-                      child: NotificationBellButton(
-                        churchId: churchId!,
-                        notificationService: notificationService,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                  CircleAvatar(
-  radius: 26,
-  backgroundColor: Colors.white24,
-  foregroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
-  onForegroundImageError: photoUrl == null ? null : (_, _) {},
-  child: Text(
-    _initials(user.fullName),
-    style: const TextStyle(
-      color: Colors.white,
-      fontSize: 16,
-      fontWeight: FontWeight.w800,
-    ),
-  ),
-),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Stay connected to what matters.',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Church updates, upcoming gatherings, and giving—all in one place.',
-                style: TextStyle(
-                  color: Color(0xD9FFFFFF),
-                  fontSize: 13,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 18),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: const [
-                  _HeroPill(
-                    icon: Icons.favorite_outline_rounded,
-                    label: 'Member space',
-                  ),
-                  _HeroPill(icon: Icons.verified_outlined, label: 'Connected'),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DecorativeOrb extends StatelessWidget {
-  final double size;
-  final double opacity;
-
-  const _DecorativeOrb({required this.size, this.opacity = 0.1});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: opacity),
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-}
-
-class _HeroPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _HeroPill({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 14),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  const _SectionHeader({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
     return Row(
       children: [
+        // Story-style Gradient Ring around User Avatar
         Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: const Color(0xFFE0E7FF),
-            borderRadius: BorderRadius.circular(13),
+          padding: const EdgeInsets.all(2.2),
+          decoration: const BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: AppColors.primary, size: 21),
-        ),
-        const SizedBox(width: 11),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
+          child: Container(
+            padding: const EdgeInsets.all(1.5),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+            ),
+            child: CircleAvatar(
+              radius: 20,
+              backgroundColor: const Color(0xFFE0E7FF),
+              foregroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
+              onForegroundImageError: photoUrl == null ? null : (_, _) {},
+              child: Text(
+                _initials(user.fullName),
                 style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 17,
+                  color: AppColors.primary,
+                  fontSize: 13,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 2),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Text(
-                subtitle,
+                _greeting(),
                 style: const TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 11,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                _titleCase(_firstName(user.fullName)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
                 ),
               ),
             ],
           ),
         ),
+        if (churchId != null)
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceMuted,
+              shape: BoxShape.circle,
+            ),
+            child: IconTheme(
+              data: const IconThemeData(color: AppColors.textPrimary),
+              child: NotificationBellButton(
+                churchId: churchId!,
+                notificationService: notificationService,
+              ),
+            ),
+          ),
       ],
     );
   }
 }
+
+class _EventStoryCard extends StatelessWidget {
+  final Map<String, dynamic> event;
+  final VoidCallback onTap;
+
+  const _EventStoryCard({required this.event, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _firstValue(
+      event,
+      ['title', 'event_title', 'name'],
+      'Church Event',
+    );
+    final rawDate = _firstValue(
+      event,
+      ['event_date', 'start_date', 'published_at', 'created_at'],
+      '',
+    );
+    final location = _firstValue(event, ['location', 'venue', 'address'], '');
+    final parsed = DateTime.tryParse(rawDate)?.toLocal();
+
+    final monthStr = parsed != null
+        ? DateFormat('MMM').format(parsed).toUpperCase()
+        : 'SOON';
+    final dayStr = parsed != null ? DateFormat('d').format(parsed) : '•';
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        width: 235,
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFF8FAFF), Color(0xFFEEF2FF)],
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFDCE4FF)),
+        ),
+        child: Row(
+          children: [
+            // Date Pill Badge
+            Container(
+              width: 50,
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    monthStr,
+                    style: const TextStyle(
+                      color: Color(0xD9FFFFFF),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    dayStr,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        location.isNotEmpty
+                            ? Icons.location_on_rounded
+                            : Icons.schedule_rounded,
+                        size: 13,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          location.isNotEmpty
+                              ? location
+                              : (parsed != null
+                                  ? DateFormat('h:mm a').format(parsed)
+                                  : 'Upcoming'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// POSTS & EVENTS TABS
+// ============================================================================
 
 class _PostsTab extends StatelessWidget {
   final String? churchId;
@@ -627,9 +769,9 @@ class _PostsTab extends StatelessWidget {
     }
 
     return _DataListPage(
-      title: 'Church Posts',
+      title: 'Explore Posts',
       subtitle: 'Messages, news, and inspiration from your church.',
-      icon: Icons.article_outlined,
+      icon: Icons.explore_rounded,
       future: postService.getPublishedPosts(churchId!),
       type: 'post',
       churchId: churchId,
@@ -659,7 +801,7 @@ class _EventsTab extends StatelessWidget {
     return _DataListPage(
       title: 'Church Events',
       subtitle: 'Discover what is happening in your church community.',
-      icon: Icons.calendar_month_outlined,
+      icon: Icons.calendar_month_rounded,
       future: eventService.getPublishedEvents(churchId!),
       type: 'event',
     );
@@ -691,81 +833,283 @@ class _PaymentsTab extends StatelessWidget {
   }
 }
 
+// ============================================================================
+// SOCIAL PROFILE TAB (Cover Header + Overlapping Avatar + Clean Cards)
+// ============================================================================
+
 class _ProfileTab extends StatelessWidget {
   final String? photoUrl;
-final bool uploadingPhoto;
-final VoidCallback? onChangePhoto;
+  final bool uploadingPhoto;
+  final VoidCallback? onChangePhoto;
   final UserModel user;
   final VoidCallback onLogout;
-final VoidCallback onChangePassword;
-  const _ProfileTab({required this.user,required this.uploadingPhoto, required this.onLogout, required this.onChangePassword,required this.onChangePhoto, required this.photoUrl});
+  final VoidCallback onChangePassword;
+
+  const _ProfileTab({
+    required this.user,
+    required this.uploadingPhoto,
+    required this.onLogout,
+    required this.onChangePassword,
+    required this.onChangePhoto,
+    required this.photoUrl,
+  });
+
+  void _openSettings(BuildContext context) {
+    final changePhoto = onChangePhoto;
+
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    'Account Settings',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.photo_camera_outlined,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    uploadingPhoto
+                        ? 'Uploading picture…'
+                        : 'Change Profile Picture',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  enabled: changePhoto != null && !uploadingPhoto,
+                  onTap: changePhoto == null || uploadingPhoto
+                      ? null
+                      : () {
+                          Navigator.of(sheetContext).pop();
+                          changePhoto();
+                        },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.lock_outline_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text(
+                    'Change Password',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onChangePassword();
+                  },
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Divider(),
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.logout_rounded,
+                      color: Color(0xFFDC2626),
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text(
+                    'Sign Out',
+                    style: TextStyle(
+                      color: Color(0xFFDC2626),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onLogout();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
+      padding: EdgeInsets.zero,
       children: [
-        const _PageTitle(
-          eyebrow: 'YOUR ACCOUNT',
-          title: 'My Profile',
-          subtitle: 'Your member identity and contact information.',
-        ),
-        const SizedBox(height: 20),
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(26),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x334F46E5),
-                blurRadius: 24,
-                offset: Offset(0, 10),
+        // Cover Banner + Overlapping Avatar
+        Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.bottomCenter,
+          children: [
+            Container(
+              height: 155,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: AppColors.primaryGradient,
               ),
-            ],
-          ),
+              child: Stack(
+                children: [
+                  const Positioned(
+                    right: -25,
+                    top: -30,
+                    child: _DecorativeOrb(size: 130, opacity: 0.12),
+                  ),
+                  const Positioned(
+                    left: -20,
+                    bottom: -40,
+                    child: _DecorativeOrb(size: 100, opacity: 0.08),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 16,
+                    child: IconButton.filledTonal(
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.18),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => _openSettings(context),
+                      icon: const Icon(Icons.settings_outlined, size: 22),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              bottom: -46,
+              child: GestureDetector(
+                onTap: onChangePhoto != null && !uploadingPhoto
+                    ? onChangePhoto
+                    : null,
+                child: Stack(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: AppColors.background,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x1A101828),
+                            blurRadius: 16,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 44,
+                        backgroundColor: const Color(0xFFE0E7FF),
+                        foregroundImage:
+                            photoUrl == null ? null : NetworkImage(photoUrl!),
+                        onForegroundImageError:
+                            photoUrl == null ? null : (_, _) {},
+                        child: Text(
+                          _initials(user.fullName.toUpperCase()),
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (onChangePhoto != null)
+                      Positioned(
+                        right: 2,
+                        bottom: 2,
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.background,
+                              width: 2.5,
+                            ),
+                          ),
+                          child: uploadingPhoto
+                              ? const Padding(
+                                  padding: EdgeInsets.all(6),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.camera_alt_rounded,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 56),
+
+        // User Handle & Verified Status
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             children: [
-             CircleAvatar(
-  radius: 41,
-  backgroundColor: Colors.white24,
-  foregroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
-  onForegroundImageError: photoUrl == null ? null : (_, _) {},
-  child: Text(
-    _initials(user.fullName.toUpperCase()),
-    style: const TextStyle(
-      color: Colors.white,
-      fontSize: 25,
-      fontWeight: FontWeight.w800,
-    ),
-  ),
-),
-if (onChangePhoto != null)
-  TextButton(
-    onPressed: uploadingPhoto ? null : onChangePhoto,
-    style: TextButton.styleFrom(foregroundColor: Colors.white),
-    child: Text(
-      uploadingPhoto ? 'Uploading…' : 'Change Profile Picture',
-    ),
-  ),
-              const SizedBox(height: 14),
               Text(
-                user.fullName.toUpperCase(),
+                _titleCase(user.fullName),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 21,
+                  color: AppColors.textPrimary,
+                  fontSize: 22,
                   fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
                 ),
               ),
-              const SizedBox(height: 9),
+              const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -773,15 +1117,15 @@ if (onChangePhoto != null)
                   children: [
                     const Icon(
                       Icons.verified_rounded,
-                      color: Color(0xFF6EE7B7),
+                      color: AppColors.primary,
                       size: 15,
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      _titleCase(user.accountStatus),
+                      '${_titleCase(user.accountStatus)} Member',
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
+                        color: AppColors.primary,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -791,67 +1135,105 @@ if (onChangePhoto != null)
             ],
           ),
         ),
-        const SizedBox(height: 22),
-        const Text(
-          'Personal details',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.border),
-          ),
+
+        const SizedBox(height: 24),
+
+        // About / Contact Info Card
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _ProfileInfoRow(
-                icon: Icons.person_outline_rounded,
-                label: 'Full name',
-                value: user.fullName,
+              const Text(
+                'About',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-              const Divider(indent: 68),
-              _ProfileInfoRow(
-                icon: Icons.phone_outlined,
-                label: 'Phone',
-                value: user.phone,
+              const SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  children: [
+                    _ProfileInfoRow(
+                      icon: Icons.person_outline_rounded,
+                      label: 'Full name',
+                      value: user.fullName,
+                    ),
+                    const Divider(height: 1, indent: 68),
+                    _ProfileInfoRow(
+                      icon: Icons.phone_outlined,
+                      label: 'Phone',
+                      value: user.phone,
+                    ),
+                    const Divider(height: 1, indent: 68),
+                    _ProfileInfoRow(
+                      icon: Icons.email_outlined,
+                      label: 'Email',
+                      value: user.email ?? 'Not provided',
+                    ),
+                    const Divider(height: 1, indent: 68),
+                    _ProfileInfoRow(
+                      icon: Icons.verified_user_outlined,
+                      label: 'Account status',
+                      value: _titleCase(user.accountStatus),
+                      valueColor: user.accountStatus.toLowerCase() == 'active'
+                          ? AppColors.success
+                          : AppColors.textPrimary,
+                    ),
+                  ],
+                ),
               ),
-              const Divider(indent: 68),
-              _ProfileInfoRow(
-                icon: Icons.email_outlined,
-                label: 'Email',
-                value: user.email ?? 'Not provided',
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: AppColors.surface,
+                    side: const BorderSide(color: AppColors.border),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: () => _openSettings(context),
+                  icon: const Icon(Icons.settings_outlined, size: 20),
+                  label: const Text(
+                    'Manage Account & Settings',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
               ),
-              const Divider(indent: 68),
-              _ProfileInfoRow(
-                icon: Icons.verified_user_outlined,
-                label: 'Account status',
-                value: _titleCase(user.accountStatus),
-                valueColor: user.accountStatus.toLowerCase() == 'active'
-                    ? AppColors.success
-                    : AppColors.textPrimary,
-              ),
+              const SizedBox(height: 30),
             ],
           ),
         ),
-        const SizedBox(height: 22),
-        OutlinedButton.icon(
-  onPressed: onChangePassword,
-  icon: const Icon(Icons.lock_outline),
-  label: const Text('Change Password'),
-),
-const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: onLogout,
-          icon: const Icon(Icons.logout_rounded),
-          label: const Text('Sign out'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.error,
-            side: const BorderSide(color: Color(0xFFFECACA)),
-            backgroundColor: const Color(0xFFFEF2F2),
-          ),
-        ),
       ],
+    );
+  }
+}
+
+class _DecorativeOrb extends StatelessWidget {
+  final double size;
+  final double opacity;
+
+  const _DecorativeOrb({required this.size, this.opacity = 0.1});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: opacity),
+        shape: BoxShape.circle,
+      ),
     );
   }
 }
@@ -876,13 +1258,13 @@ class _ProfileInfoRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: AppColors.surfaceMuted,
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 21),
+            child: Icon(icon, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -897,7 +1279,7 @@ class _ProfileInfoRow extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   value,
                   style: TextStyle(
@@ -915,11 +1297,15 @@ class _ProfileInfoRow extends StatelessWidget {
   }
 }
 
+// ============================================================================
+// EXPLORE / LIST PAGE
+// ============================================================================
+
 class _DataListPage extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final Future<List<Map<String, dynamic>>> future;
+  final Future<List> future;
   final String type;
   final String? churchId;
   final PostService? postService;
@@ -936,20 +1322,20 @@ class _DataListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
+    return FutureBuilder<List>(
       future: future,
       builder: (context, snapshot) {
         return ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
           children: [
             _PageTitle(
-              eyebrow: type == 'post' ? 'STAY INFORMED' : 'COME TOGETHER',
+              eyebrow: type == 'post' ? 'COMMUNITY STREAM' : 'GATHERINGS',
               title: title,
               subtitle: subtitle,
               icon: icon,
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 18),
             if (snapshot.connectionState == ConnectionState.waiting)
               const _LoadingCards(count: 3)
             else if (snapshot.hasError)
@@ -997,59 +1383,71 @@ class _PageTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (icon != null) ...[
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(17),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x294F46E5),
-                  blurRadius: 18,
-                  offset: Offset(0, 7),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (icon != null) ...[
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x244F46E5),
+                    blurRadius: 14,
+                    offset: Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: Colors.white, size: 23),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  eyebrow,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
-            child: Icon(icon, color: Colors.white, size: 27),
           ),
-          const SizedBox(width: 14),
         ],
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                eyebrow,
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(title, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 5),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
+
+// ============================================================================
+// SOCIAL FEED CARD (Author Header + Media + Social Engagement Footer)
+// ============================================================================
 
 class _ContentCard extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -1076,6 +1474,7 @@ class _ContentCardState extends State<_ContentCard> {
     final churchId = widget.churchId;
     final postService = widget.postService;
     final isPost = type == 'post';
+
     final title = _firstValue(
       data,
       isPost
@@ -1099,116 +1498,196 @@ class _ContentCardState extends State<_ContentCard> {
     ], '');
     final location = _firstValue(data, ['location', 'venue', 'address'], '');
     final postType = _firstValue(data, ['post_type', 'type'], '');
+    final authorName = _firstValue(
+      data,
+      ['church_name', 'churchName', 'author_name', 'authorName'],
+      'Church Community',
+    );
     final postId = _firstValue(data, ['id', 'post_id', 'postId'], '');
     final canLike =
         isPost && postId.isNotEmpty && churchId != null && postService != null;
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.85)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x07101828),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: isPost ? () => _openPostDetails(context) : null,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Social Author Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              child: Row(
                 children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
-                      color: isPost
-                          ? const Color(0xFFE0E7FF)
-                          : const Color(0xFFCCFBF1),
-                      borderRadius: BorderRadius.circular(14),
+                      gradient: isPost
+                          ? AppColors.primaryGradient
+                          : const LinearGradient(
+                              colors: [Color(0xFF0D9488), Color(0xFF14B8A6)],
+                            ),
+                      shape: BoxShape.circle,
                     ),
                     child: Icon(
                       isPost
-                          ? Icons.campaign_outlined
-                          : Icons.calendar_month_outlined,
-                      color: isPost ? AppColors.primary : AppColors.secondary,
-                      size: 22,
+                          ? Icons.church_rounded
+                          : Icons.event_available_rounded,
+                      color: Colors.white,
+                      size: 19,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 11),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Wrap(
-                          spacing: 7,
-                          runSpacing: 5,
-                          crossAxisAlignment: WrapCrossAlignment.center,
+                        Row(
                           children: [
-                            _TypeBadge(label: isPost ? 'POST' : 'EVENT'),
-                            if (isPost && postType.isNotEmpty)
-                              Text(
-                                _titleCase(postType),
+                            Flexible(
+                              child: Text(
+                                authorName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified_rounded,
+                              color: AppColors.primary,
+                              size: 14,
+                            ),
                           ],
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 17,
-                            height: 1.25,
-                            letterSpacing: -0.2,
+                        if (rawDate.isNotEmpty) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            isPost
+                                ? _timeAgo(rawDate)
+                                : _formatDate(rawDate),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
+                  _TypeBadge(
+                    label: isPost
+                        ? (postType.isNotEmpty ? postType.toUpperCase() : 'POST')
+                        : 'EVENT',
+                    isEvent: !isPost,
+                  ),
                 ],
               ),
-              if (rawDate.isNotEmpty || (!isPost && location.isNotEmpty)) ...[
-                const SizedBox(height: 13),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    if (rawDate.isNotEmpty)
-                      _MetadataItem(
-                        icon: Icons.schedule_rounded,
-                        label: _formatDate(rawDate),
+            ),
+
+            // 2. Post / Event Title & Caption
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16.5,
+                      height: 1.3,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  if (description.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      description,
+                      maxLines: isPost ? 3 : null,
+                      overflow: isPost ? TextOverflow.ellipsis : null,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        height: 1.5,
                       ),
-                    if (!isPost && location.isNotEmpty)
-                      _MetadataItem(
-                        icon: Icons.location_on_outlined,
-                        label: location,
-                      ),
+                    ),
                   ],
-                ),
-              ],
-              ContentMediaGallery(media: data['media'], enableDownload: isPost),
-              if (description.isNotEmpty) ...[
-                const SizedBox(height: 13),
-                Text(
-                  description,
-                  maxLines: isPost ? 3 : null,
-                  overflow: isPost ? TextOverflow.ellipsis : null,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                    height: 1.55,
+                ],
+              ),
+            ),
+
+            // 3. Location Pill (for Events)
+            if (!isPost && (location.isNotEmpty || rawDate.isNotEmpty))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Wrap(
+                    spacing: 14,
+                    runSpacing: 6,
+                    children: [
+                      if (rawDate.isNotEmpty)
+                        _MetadataItem(
+                          icon: Icons.schedule_rounded,
+                          label: _formatDate(rawDate),
+                        ),
+                      if (location.isNotEmpty)
+                        _MetadataItem(
+                          icon: Icons.location_on_rounded,
+                          label: location,
+                        ),
+                    ],
                   ),
                 ),
-              ],
-              if (isPost) ...[
-                const SizedBox(height: 14),
-                const Divider(),
-                const SizedBox(height: 11),
-                Row(
+              ),
+
+            // 4. Media Gallery
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: ContentMediaGallery(
+                media: data['media'],
+                enableDownload: isPost,
+              ),
+            ),
+
+            // 5. Social Engagement Footer (for Posts)
+            if (isPost) ...[
+              const SizedBox(height: 10),
+              Divider(
+                height: 1,
+                color: AppColors.border.withValues(alpha: 0.7),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                child: Row(
                   children: [
                     if (canLike)
                       PostLikeButton(
@@ -1227,31 +1706,41 @@ class _ContentCardState extends State<_ContentCard> {
                         showLabel: false,
                       ),
                     const Spacer(),
-                    const Icon(
-                      Icons.menu_book_rounded,
-                      color: AppColors.primary,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 7),
-                    const Text(
-                      'Read post',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                    ),
-                    const SizedBox(width: 5),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: AppColors.primary,
-                      size: 18,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Read post',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: AppColors.primary,
+                            size: 12,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ],
-          ),
+              ),
+            ] else
+              const SizedBox(height: 16),
+          ],
         ),
       ),
     );
@@ -1283,24 +1772,27 @@ class _ContentCardState extends State<_ContentCard> {
 
 class _TypeBadge extends StatelessWidget {
   final String label;
+  final bool isEvent;
 
-  const _TypeBadge({required this.label});
+  const _TypeBadge({required this.label, this.isEvent = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(7),
+        color: isEvent
+            ? const Color(0xFFCCFBF1)
+            : AppColors.primary.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 9,
+        style: TextStyle(
+          color: isEvent ? const Color(0xFF0F766E) : AppColors.primary,
+          fontSize: 10,
           fontWeight: FontWeight.w800,
-          letterSpacing: 0.7,
+          letterSpacing: 0.5,
         ),
       ),
     );
@@ -1318,15 +1810,15 @@ class _MetadataItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15, color: AppColors.textSecondary),
+        Icon(icon, size: 15, color: AppColors.primary),
         const SizedBox(width: 5),
         Flexible(
           child: Text(
             label,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 11,
+              color: AppColors.textPrimary,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1335,6 +1827,10 @@ class _MetadataItem extends StatelessWidget {
     );
   }
 }
+
+// ============================================================================
+// LOADING & EMPTY STATES
+// ============================================================================
 
 class _LoadingCards extends StatelessWidget {
   final int count;
@@ -1347,33 +1843,36 @@ class _LoadingCards extends StatelessWidget {
       children: List.generate(
         count,
         (index) => Container(
-          height: 126,
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: const EdgeInsets.only(bottom: 14),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(color: AppColors.border),
           ),
-          child: const Row(
+          child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Placeholder(width: 44, height: 44, radius: 14),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _Placeholder(width: 66, height: 10),
-                    SizedBox(height: 10),
-                    _Placeholder(width: double.infinity, height: 15),
-                    SizedBox(height: 9),
-                    _Placeholder(width: 180, height: 12),
-                    SizedBox(height: 16),
-                    _Placeholder(width: 125, height: 10),
-                  ],
-                ),
+              Row(
+                children: [
+                  _Placeholder(width: 40, height: 40, radius: 20),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Placeholder(width: 120, height: 12),
+                      SizedBox(height: 6),
+                      _Placeholder(width: 70, height: 10),
+                    ],
+                  ),
+                ],
               ),
+              SizedBox(height: 14),
+              _Placeholder(width: double.infinity, height: 15),
+              SizedBox(height: 8),
+              _Placeholder(width: 220, height: 12),
+              SizedBox(height: 14),
+              _Placeholder(width: double.infinity, height: 110, radius: 14),
             ],
           ),
         ),
@@ -1434,29 +1933,33 @@ class _EmptyMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 54,
-            height: 54,
+            width: 56,
+            height: 56,
             decoration: const BoxDecoration(
               color: AppColors.surfaceMuted,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.textSecondary, size: 27),
+            child: Icon(icon, color: AppColors.primary, size: 26),
           ),
           const SizedBox(height: 14),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 5),
           Text(
@@ -1473,6 +1976,10 @@ class _EmptyMessage extends StatelessWidget {
     );
   }
 }
+
+// ============================================================================
+// HELPERS
+// ============================================================================
 
 String _firstValue(
   Map<String, dynamic> data,
@@ -1516,6 +2023,18 @@ String _formatDate(String value) {
   return DateFormat('EEE, MMM d • h:mm a').format(parsed.toLocal());
 }
 
+String _timeAgo(String value) {
+  final parsed = DateTime.tryParse(value)?.toLocal();
+  if (parsed == null) return value;
+
+  final diff = DateTime.now().difference(parsed);
+  if (diff.inSeconds < 60) return 'Just now';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+  if (diff.inHours < 24) return '${diff.inHours}h ago';
+  if (diff.inDays < 7) return '${diff.inDays}d ago';
+  return DateFormat('MMM d, y').format(parsed);
+}
+
 String _firstName(String fullName) {
   final parts = fullName.trim().split(RegExp(r'\s+'));
   return parts.isEmpty || parts.first.isEmpty ? 'Friend' : parts.first;
@@ -1551,7 +2070,7 @@ String _titleCase(String value) {
 
 String _greeting() {
   final hour = DateTime.now().hour;
-  if (hour < 12) return 'Good morning,';
-  if (hour < 17) return 'Good afternoon,';
-  return 'Good evening,';
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
 }

@@ -124,93 +124,102 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showForgotPasswordDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        icon: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.lock_reset_rounded,
+            color: AppColors.primary,
+            size: 26,
+          ),
+        ),
+        title: const Text(
+          'Forgot password?',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        content: const Text(
+          'Contact your church administrator to reset your password.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            height: 1.45,
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          FilledButton(
+            style: FilledButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
+          // Soft Ambient Background Glows
           const Positioned(
-            top: -110,
+            top: -120,
             right: -90,
-            child: _AmbientCircle(size: 260, color: Color(0x226366F1)),
+            child: _AmbientCircle(size: 280, color: Color(0x1E6366F1)),
           ),
           const Positioned(
-            top: 230,
-            left: -120,
-            child: _AmbientCircle(size: 220, color: Color(0x1A14B8A6)),
+            bottom: -90,
+            left: -110,
+            child: _AmbientCircle(size: 240, color: Color(0x1414B8A6)),
           ),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+                  padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxWidth: 440,
-                        minHeight: constraints.maxHeight - 46,
+                        maxWidth: 430,
+                        minHeight: constraints.maxHeight - 48,
                       ),
                       child: Form(
                         key: _formKey,
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const _BrandMark(),
-                            const SizedBox(height: 40),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE0E7FF),
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.favorite_rounded,
-                                    size: 15,
-                                    color: AppColors.primary,
-                                  ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'YOUR CHURCH, ALWAYS CLOSE',
-                                    style: TextStyle(
-                                      color: AppColors.primaryDark,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.7,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            Text(
-                              'Welcome Back',
-                              style: Theme.of(context).textTheme.headlineLarge,
-                            ),
-                            const SizedBox(height: 9),
-                            const Text(
-                              'Sign in to stay connected with your church, community, and giving.',
-                              style: TextStyle(
-                                fontSize: 15,
-                                height: 1.55,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
+                            // Centered Social Community Brand Header
+                            const _BrandHeader(),
                             const SizedBox(height: 28),
+
+                            // Main Sign-In Card
                             Container(
-                              padding: const EdgeInsets.all(20),
+                              padding: const EdgeInsets.all(22),
                               decoration: BoxDecoration(
                                 color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: AppColors.border),
+                                borderRadius: BorderRadius.circular(26),
+                                border: Border.all(
+                                  color: AppColors.border.withValues(alpha: 0.9),
+                                ),
                                 boxShadow: const [
                                   BoxShadow(
-                                    color: Color(0x14101828),
+                                    color: Color(0x0D101828),
                                     blurRadius: 28,
                                     offset: Offset(0, 12),
                                   ),
@@ -220,20 +229,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   const Text(
-                                    'Member sign in',
+                                    'Sign in to your account',
                                     style: TextStyle(
-                                      fontSize: 17,
+                                      color: AppColors.textPrimary,
+                                      fontSize: 18,
                                       fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.3,
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'Stay connected with posts, events, and giving.',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 22),
                                   AppTextField(
                                     label: 'Phone, email, or member number',
-                                    hint: 'Enter your login identifier',
+                                    hint: 'Enter your Email,Phone Number',
                                     controller: _identifierController,
                                     keyboardType: TextInputType.emailAddress,
                                     prefixIcon: const Icon(
-                                      Icons.person_outline_rounded,
+                                      Icons.email_outlined,
                                     ),
                                     validator: (value) {
                                       if (value == null ||
@@ -243,7 +262,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       return null;
                                     },
                                   ),
-                                  const SizedBox(height: 18),
+                                  const SizedBox(height: 16),
                                   AppTextField(
                                     label: 'Password',
                                     hint: 'Enter your password',
@@ -274,7 +293,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                       return null;
                                     },
                                   ),
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 6),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton(
+                                      style: TextButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 4,
+                                        ),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      onPressed: _showForgotPasswordDialog,
+                                      child: const Text(
+                                        'Forgot password?',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
                                   AppButton(
                                     text: 'Sign In',
                                     loading: _loading,
@@ -285,16 +327,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
-                                        Icons.shield_outlined,
-                                        size: 15,
+                                        Icons.verified_user_rounded,
+                                        size: 14,
                                         color: AppColors.success,
                                       ),
                                       SizedBox(width: 6),
                                       Text(
-                                        'Secure member access',
+                                        'Encrypted member session',
                                         style: TextStyle(
                                           color: AppColors.textSecondary,
-                                          fontSize: 12,
+                                          fontSize: 11.5,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -303,68 +345,75 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ],
                               ),
                             ),
-                            
-                            const SizedBox(height: 18),
-                            Align(
-  alignment: Alignment.centerRight,
-  child: TextButton(
-    
-    onPressed: () {
-      showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Forgot password?'),
-          content: const Text(
-            'Contact your church administrator to reset your password.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    },
-    child: const Text('Forgot password?'),
-  ),
-),
-                            const SizedBox(height: 18),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceMuted,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Center(
-                                child: TextButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => ChurchSelectionScreen(
-                                          churchService: widget.churchService,
-                                          memberService: widget.memberService,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text(
-                                    "Don't have an account? Register",
+
+                            const SizedBox(height: 20),
+
+                            // Social Sign-Up Footer Pill
+                            InkWell(
+                              borderRadius: BorderRadius.circular(18),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChurchSelectionScreen(
+                                      churchService: widget.churchService,
+                                      memberService: widget.memberService,
+                                    ),
                                   ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 15,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: AppColors.border.withValues(
+                                      alpha: 0.9,
+                                    ),
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Don't have an account? ",
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Register',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 15,
+                                      color: AppColors.primary,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 24),
+
+                            const SizedBox(height: 22),
+
                             const Center(
                               child: Text(
-                                'Church Member Application',
+                                'Church Member • Connect • Grow • Give',
                                 style: TextStyle(
                                   color: AppColors.textSecondary,
-                                  fontSize: 12,
+                                  fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -384,56 +433,80 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class _BrandMark extends StatelessWidget {
-  const _BrandMark();
+class _BrandHeader extends StatelessWidget {
+  const _BrandHeader();
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
         Container(
-          width: 54,
-          height: 54,
+          padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(17),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x3D4F46E5),
-                blurRadius: 18,
-                offset: Offset(0, 8),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.2),
+              width: 1.5,
+            ),
+          ),
+          child: Container(
+            width: 68,
+            height: 68,
+            decoration: const BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x384F46E5),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.church_rounded,
+              size: 34,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.09),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.favorite_rounded,
+                size: 13,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: 5),
+              Text(
+                'YOUR CHURCH, ALWAYS CLOSE',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.7,
+                ),
               ),
             ],
           ),
-          child: const Icon(
-            Icons.church_rounded,
-            size: 29,
-            color: Colors.white,
-          ),
         ),
-        const SizedBox(width: 13),
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Church Member',
-              style: TextStyle(
+        const SizedBox(height: 12),
+        Text(
+          'Welcome Back',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.2,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
               ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'Connect • Grow • Give',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
         ),
       ],
     );

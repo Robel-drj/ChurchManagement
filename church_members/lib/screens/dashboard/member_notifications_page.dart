@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../models/notification_model.dart';
 import '../../services/notification_service.dart';
 
@@ -212,39 +213,100 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
 
   String _formatDate(DateTime? date) {
     if (date == null) return '';
+    final local = date.toLocal();
+    final diff = DateTime.now().difference(local);
 
-    return DateFormat('MMM d, yyyy • h:mm a').format(date);
+    if (diff.inSeconds < 60) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays == 1) {
+      return 'Yesterday • ${DateFormat('h:mm a').format(local)}';
+    }
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return DateFormat('MMM d, yyyy • h:mm a').format(local);
   }
 
-  IconData _iconForType(String type) {
+  _NotificationVisual _visualForType(String type) {
     switch (type.toLowerCase()) {
       case 'event':
-        return Icons.event;
+        return const _NotificationVisual(
+          icon: Icons.event_available_rounded,
+          color: Color(0xFF0D9488),
+          bgColor: Color(0xFFCCFBF1),
+          label: 'EVENT',
+        );
       case 'payment':
       case 'finance':
-        return Icons.account_balance_wallet_outlined;
+        return const _NotificationVisual(
+          icon: Icons.volunteer_activism_rounded,
+          color: Color(0xFF059669),
+          bgColor: Color(0xFFD1FAE5),
+          label: 'GIVING',
+        );
       case 'announcement':
-        return Icons.campaign_outlined;
+        return const _NotificationVisual(
+          icon: Icons.campaign_rounded,
+          color: Color(0xFFD97706),
+          bgColor: Color(0xFFFEF3C7),
+          label: 'ANNOUNCEMENT',
+        );
       case 'content':
       case 'post':
-        return Icons.article_outlined;
+        return const _NotificationVisual(
+          icon: Icons.article_rounded,
+          color: AppColors.primary,
+          bgColor: Color(0xFFE0E7FF),
+          label: 'POST',
+        );
       default:
-        return Icons.notifications_outlined;
+        return const _NotificationVisual(
+          icon: Icons.notifications_rounded,
+          color: AppColors.primary,
+          bgColor: Color(0xFFE0E7FF),
+          label: 'UPDATE',
+        );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0.5,
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        titleSpacing: 4,
         title: Row(
           children: [
-            const Text('Notifications'),
+            const Text(
+              'Activity',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
+              ),
+            ),
             if (_unreadCount > 0) ...[
               const SizedBox(width: 8),
-              Badge(
-                label: Text(
-                  _unreadCount > 99 ? '99+' : _unreadCount.toString(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 3.5,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _unreadCount > 99 ? '99+ new' : '$_unreadCount new',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -252,17 +314,48 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
         ),
         actions: [
           if (_unreadCount > 0)
-            TextButton(
-              onPressed: _markingAll ? null : _markAllRead,
-              child: _markingAll
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Read all'),
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: TextButton.icon(
+                onPressed: _markingAll ? null : _markAllRead,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                ),
+                icon: _markingAll
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
+                      )
+                    : const Icon(Icons.done_all_rounded, size: 16),
+                label: const Text(
+                  'Mark all read',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(
+            height: 1,
+            color: AppColors.border.withValues(alpha: 0.7),
+          ),
+        ),
       ),
       body: _buildBody(),
     );
@@ -270,28 +363,67 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
 
   Widget _buildBody() {
     if (_loading && _notifications.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        itemCount: 6,
+        itemBuilder: (_, _) => const _NotificationSkeletonCard(),
+      );
     }
 
     if (_error != null && _notifications.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48),
-              const SizedBox(height: 12),
-              Text(
-                'Could not load notifications.\n$_error',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => _loadInbox(refresh: true),
-                child: const Text('Try again'),
-              ),
-            ],
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEE2E2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.cloud_off_rounded,
+                    size: 26,
+                    color: AppColors.error,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Unable to load notifications',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '$_error',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: () => _loadInbox(refresh: true),
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Try again'),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -299,33 +431,77 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
 
     if (_notifications.isEmpty) {
       return RefreshIndicator(
+        color: AppColors.primary,
         onRefresh: () => _loadInbox(refresh: true),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          children: const [
-            SizedBox(height: 140),
-            Icon(Icons.notifications_none, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Center(child: Text('You have no notifications yet.')),
-            SizedBox(height: 20),
+          padding: const EdgeInsets.all(24),
+          children: [
+            const SizedBox(height: 90),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      size: 32,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'All caught up!',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'You have no notifications yet. Church updates, event reminders, and giving receipts will appear here.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       );
     }
 
     return RefreshIndicator(
+      color: AppColors.primary,
       onRefresh: () => _loadInbox(refresh: true),
-      child: ListView.separated(
+      child: ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
         itemCount: _notifications.length + (_loadingMore ? 1 : 0),
-        separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
         itemBuilder: (context, index) {
           if (index >= _notifications.length) {
             return const Padding(
               padding: EdgeInsets.all(20),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
             );
           }
 
@@ -336,59 +512,235 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
   }
 
   Widget _buildNotificationTile(NotificationModel notification) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: CircleAvatar(
-        backgroundColor: notification.isRead
-            ? Theme.of(context).colorScheme.surfaceContainerHighest
-            : Theme.of(context).colorScheme.primaryContainer,
-        child: Icon(
-          _iconForType(notification.notificationType),
-          color: notification.isRead
-              ? Theme.of(context).colorScheme.onSurfaceVariant
-              : Theme.of(context).colorScheme.primary,
+    final visual = _visualForType(notification.notificationType);
+    final isUnread = !notification.isRead;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: isUnread
+            ? const Color(0xFFF5F7FF)
+            : AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isUnread
+              ? AppColors.primary.withValues(alpha: 0.28)
+              : AppColors.border.withValues(alpha: 0.85),
+          width: isUnread ? 1.2 : 1,
         ),
-      ),
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              notification.title,
-              style: TextStyle(
-                fontWeight: notification.isRead
-                    ? FontWeight.normal
-                    : FontWeight.bold,
-              ),
-            ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x05101828),
+            blurRadius: 12,
+            offset: Offset(0, 4),
           ),
-          if (!notification.isRead)
-            Container(
-              width: 9,
-              height: 9,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                shape: BoxShape.circle,
-              ),
-            ),
         ],
       ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(notification.message),
-            if (notification.sentAt != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _formatDate(notification.sentAt),
-                style: Theme.of(context).textTheme.bodySmall,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _markOneRead(notification),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Category Icon Avatar + Unread Dot
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isUnread
+                          ? visual.bgColor
+                          : AppColors.surfaceMuted,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      visual.icon,
+                      size: 21,
+                      color: isUnread
+                          ? visual.color
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                  if (isUnread)
+                    Positioned(
+                      top: -1,
+                      left: -1,
+                      child: Container(
+                        width: 11,
+                        height: 11,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFF5F7FF),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              // Notification Body
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isUnread
+                                ? visual.color.withValues(alpha: 0.12)
+                                : AppColors.surfaceMuted,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            visual.label,
+                            style: TextStyle(
+                              color: isUnread
+                                  ? visual.color
+                                  : AppColors.textSecondary,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        if (notification.sentAt != null)
+                          Text(
+                            _formatDate(notification.sentAt),
+                            style: TextStyle(
+                              color: isUnread
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: isUnread
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      notification.title,
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14.5,
+                        fontWeight: isUnread
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      notification.message,
+                      style: TextStyle(
+                        color: isUnread
+                            ? AppColors.textPrimary.withValues(alpha: 0.85)
+                            : AppColors.textSecondary,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ],
+          ),
         ),
       ),
-      onTap: () => _markOneRead(notification),
+    );
+  }
+}
+
+class _NotificationVisual {
+  final IconData icon;
+  final Color color;
+  final Color bgColor;
+  final String label;
+
+  const _NotificationVisual({
+    required this.icon,
+    required this.color,
+    required this.bgColor,
+    required this.label,
+  });
+}
+
+class _NotificationSkeletonCard extends StatelessWidget {
+  const _NotificationSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceMuted,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 72,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 180,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
