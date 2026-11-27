@@ -91,20 +91,27 @@
         </thead>
 
         <tbody>
-          <tr *ngFor="let member of members">
-            <td>
-              <div class="member-cell">
-                <div class="avatar">
-                  {{ member.full_name.charAt(0).toUpperCase() }}
-                </div>
-                <div>
-                  <strong>{{ member.full_name }}</strong>
-                  <small>{{ member.roles.join(', ') || 'Member' }}</small>
-                </div>
-              </div>
-            </td>
+         <tr *ngFor="let member of members">
+  <td>
+    <div class="member-cell">
+      <div class="avatar">
+        <img
+          *ngIf="member.profile_image as photo"
+          [src]="photo"
+          alt=""
+          (error)="hideFailedAvatar($event)"
+        />
+        <span>{{ member.full_name.charAt(0).toUpperCase() }}</span>
+      </div>
 
-            <td>{{ member.member_number || '—' }}</td>
+      <div>
+        <strong>{{ member.full_name }}</strong>
+        <small>{{ member.roles.join(', ') || 'Member' }}</small>
+      </div>
+    </div>
+  </td>
+
+  <td>{{ member.member_number || '—' }}</td>
             <td>{{ member.phone }}</td>
             <td>{{ member.email || '—' }}</td>
             <td>{{ member.joined_at | date:'mediumDate' }}</td>
@@ -359,9 +366,15 @@
     <div *ngIf="selectedMember && !detailsLoading">
 
       <div class="profile-heading">
-        <div class="large-avatar">
-          {{ selectedMember.full_name.charAt(0).toUpperCase() }}
-        </div>
+       <div class="large-avatar">
+  <img
+    *ngIf="selectedMember.profile_image as photo"
+    [src]="photo"
+    alt=""
+    (error)="hideFailedAvatar($event)"
+  />
+  <span>{{ selectedMember.full_name.charAt(0).toUpperCase() }}</span>
+</div>
 
         <div>
           <h3>{{ selectedMember.full_name }}</h3>

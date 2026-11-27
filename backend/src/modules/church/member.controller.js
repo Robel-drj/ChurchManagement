@@ -6,6 +6,7 @@ import {
   updateChurchMemberProfile,
   updateChurchMembershipStatus,
   updateChurchMemberPassword,
+  updateOwnProfilePicture
 } from "./member.service.js";
 
 import {
@@ -39,6 +40,31 @@ export async function registerMember(req, res, next) {
       success: true,
       message: "Church member registered successfully.",
       data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+export async function uploadMyProfilePicture(req, res, next) {
+  try {
+    const churchId = memberIdSchema.safeParse(req.params.churchId);
+
+    if (!churchId.success || !req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Select a profile photo and a valid church.",
+      });
+    }
+
+    const profileImage = await updateOwnProfilePicture(
+      churchId.data,
+      req.user.id,
+      req.file
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: { profileImage },
     });
   } catch (error) {
     next(error);

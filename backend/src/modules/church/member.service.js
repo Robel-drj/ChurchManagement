@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { pool } from "../../config/database.js";
+import { cloudinary } from "../../config/cloudinary.js";
 import { getPhoneLookupKey } from "../../utils/phone.js";
 import {
   PLATFORM_ADMIN_ROLE_CONFLICT_MESSAGE,
@@ -702,4 +703,71 @@ export async function updateChurchMembershipStatus(
   } finally {
     client.release();
   }
+}
+export async function updateOwnProfilePicture(churchId, userId, file) {
+  const { rows: [membership] } = await pool.query(
+    `SELECT cm.id
+     FROM church_memberships cm
+     JOIN churches c ON c.id = cm.church_id
+     JOIN users u ON u.id = cm.user_id
+     WHERE cm.church_id = $1
+       AND cm.user_id = $2
+       AND cm.membership_status = 'active'
+       AND c.status = 'active'
+       AND u.account_status = 'active'`,
+    [churchId, userId]
+  );
+
+  if (!membership) {
+    const error = new Error("You need an active membership in this church.");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const photo = await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "image",
+        folder: `churches/${churchId}/member-photos`,
+        public_id: membership.id,
+        overwrite: true,
+        invalidate: true,
+        allowed_formats: ["jpg", "png", "webp"],
+        transformation: [{ width: 512, height: 512, crop: "limit" }],
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+
+    stream.end(file.buffer);
+  });
+
+  const { rows: [profile] } = await pool.query(
+    `INSERT INTO member_profiles (membership_id, profile_image)
+     SELECT cm.id, $1
+     FROM church_memberships cm
+     JOIN churches c ON c.id = cm.church_id
+     JOIN users u ON u.id = cm.user_id
+     WHERE cm.id = $2
+       AND cm.user_id = $3
+       AND cm.church_id = $4
+       AND cm.membership_status = 'active'
+       AND c.status = 'active'
+       AND u.account_status = 'active'
+     ON CONFLICT (membership_id) DO UPDATE
+     SET profile_image = EXCLUDED.profile_image,
+         updated_at = CURRENT_TIMESTAMP
+     RETURNING profile_image`,
+    [photo.secure_url, membership.id, userId, churchId]
+  );
+
+  if (!profile) {
+    const error = new Error("Your membership is no longer active.");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return profile.profile_image;
 }

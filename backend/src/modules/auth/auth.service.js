@@ -62,6 +62,7 @@ async function getUserAccessContext(client, userId) {
          cm.church_id,
          cm.member_number,
          cm.membership_status,
+         mp.profile_image,
          c.church_name,
          c.church_code,
          c.logo_url,
@@ -70,6 +71,7 @@ async function getUserAccessContext(client, userId) {
        FROM church_memberships cm
        JOIN churches c
          ON c.id = cm.church_id
+         LEFT JOIN member_profiles mp ON mp.membership_id = cm.id
        LEFT JOIN membership_roles mr
          ON mr.membership_id = cm.id
         AND mr.church_id = cm.church_id
@@ -93,6 +95,7 @@ async function getUserAccessContext(client, userId) {
         churchId: row.church_id,
         memberNumber: row.member_number,
         membershipStatus: row.membership_status,
+        profileImage: row.profile_image,
         church: {
           id: row.church_id,
           name: row.church_name,

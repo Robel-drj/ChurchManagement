@@ -23,18 +23,23 @@ const upload = multer({
   },
 });
 
-export function uploadChurchLogoFile(req, res, next) {
-  upload.single("logo")(req, res, (error) => {
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message:
-          error.code === "LIMIT_FILE_SIZE"
-            ? "The profile photo cannot exceed 5 MB."
-            : error.message,
-      });
-    }
+export function uploadImageField(fieldName) {
+  return (req, res, next) => {
+    upload.single(fieldName)(req, res, (error) => {
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message:
+            error.code === "LIMIT_FILE_SIZE"
+              ? "The profile photo cannot exceed 5 MB."
+              : error.message,
+        });
+      }
 
-    next();
-  });
+      next();
+    });
+  };
 }
+
+export const uploadChurchLogoFile = uploadImageField("logo");
+export const uploadMemberPhotoFile = uploadImageField("photo");

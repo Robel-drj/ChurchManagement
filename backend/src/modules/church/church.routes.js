@@ -70,6 +70,7 @@ import {
   getMemberDetails,
   updateMemberProfile,
   updateMemberStatus,
+  uploadMyProfilePicture,
   updateMemberPassword
 } from "./member.controller.js";
 import { getDashboard } from "./church.controller.js";
@@ -85,6 +86,7 @@ import {
 } from "./church-profile.controller.js";
 import {
   uploadChurchLogoFile,
+  uploadMemberPhotoFile,
 } from "../../middleware/uploadChurchLogo.js";
 import {
   createChurchNotification,
@@ -585,7 +587,12 @@ router.patch(
   requireChurchPermission("notifications.manage"),
   cancelNotification
 );
-
+router.post(
+  "/:churchId/my-profile/photo",
+  authenticate,
+  uploadMemberPhotoFile,
+  uploadMyProfilePicture
+);
 router.patch(
   "/:churchId/notifications/:notificationId/read",
   authenticate,

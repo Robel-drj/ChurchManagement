@@ -17,7 +17,9 @@ import '../auth/change_password_screen.dart';
 import '../posts/post_details_screen.dart';
 import 'member_payments_page.dart';
 import 'notification_bell_button.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../core/network/api_exceptions.dart';
 class MemberDashboard extends StatefulWidget {
   final UserModel user;
   final AuthService authService;
@@ -46,7 +48,56 @@ class MemberDashboard extends StatefulWidget {
 
 class _MemberDashboardState extends State<MemberDashboard> {
   int _selectedIndex = 0;
+String? _uploadedPhotoUrl;
+bool _uploadingPhoto = false;
 
+String? get _profilePhotoUrl {
+  final churchId = _activeChurchId;
+  if (churchId == null) return null;
+  if (_uploadedPhotoUrl != null) return _uploadedPhotoUrl;
+
+  for (final membership in widget.user.memberships) {
+    if (membership is Map &&
+        (membership['churchId'] ?? membership['church_id']) == churchId) {
+      final url = membership['profileImage'];
+      return url is String && url.isNotEmpty ? url : null;
+    }
+  }
+
+  return null;
+}
+
+Future<void> _changeProfilePicture() async {
+  final churchId = _activeChurchId;
+  if (churchId == null || _uploadingPhoto) return;
+
+  setState(() => _uploadingPhoto = true);
+
+  try {
+    final photo = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (photo == null || !mounted) return;
+
+    final url = await widget.memberService.uploadProfilePicture(churchId, photo);
+    if (!mounted) return;
+
+    setState(() => _uploadedPhotoUrl = url);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile picture updated.')),
+    );
+  } on ApiException catch (error) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error.message)),
+    );
+  } catch (_) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not change your profile picture.')),
+    );
+  } finally {
+    if (mounted) setState(() => _uploadingPhoto = false);
+  }
+}
   String? get _activeChurchId {
     for (final item in widget.user.memberships) {
       if (item is! Map) continue;
@@ -116,12 +167,16 @@ Future<void> _openChangePassword() async {
         postService: widget.postService,
         eventService: widget.eventService,
         notificationService: widget.notificationService,
+        photoUrl: _profilePhotoUrl,
       ),
       _PostsTab(churchId: churchId, postService: widget.postService),
       _EventsTab(churchId: churchId, eventService: widget.eventService),
       _PaymentsTab(churchId: churchId, paymentService: widget.paymentService),
      _ProfileTab(
   user: widget.user,
+  photoUrl: _profilePhotoUrl,
+  uploadingPhoto: _uploadingPhoto,
+  onChangePhoto: churchId == null ? null : _changeProfilePicture,
   onLogout: _logout,
   onChangePassword: _openChangePassword,
 ),
@@ -191,6 +246,7 @@ class _HomeTab extends StatelessWidget {
   final PostService postService;
   final EventService eventService;
   final NotificationService notificationService;
+  final String? photoUrl;
 
   const _HomeTab({
     required this.user,
@@ -198,6 +254,7 @@ class _HomeTab extends StatelessWidget {
     required this.postService,
     required this.eventService,
     required this.notificationService,
+    required this.photoUrl,
   });
 
   @override
@@ -218,6 +275,7 @@ class _HomeTab extends StatelessWidget {
             user: user,
             churchId: churchId,
             notificationService: notificationService,
+            photoUrl: photoUrl,
           ),
           const SizedBox(height: 24),
           const _SectionHeader(
@@ -312,11 +370,12 @@ class _HomeHeader extends StatelessWidget {
   final UserModel user;
   final String? churchId;
   final NotificationService notificationService;
-
+final String? photoUrl;
   const _HomeHeader({
     required this.user,
     required this.churchId,
     required this.notificationService,
+    required this.photoUrl,
   });
 
   @override
@@ -389,24 +448,20 @@ class _HomeHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                   ],
-                  Container(
-                    width: 52,
-                    height: 52,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Text(
-                      _initials(user.fullName),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
+                  CircleAvatar(
+  radius: 26,
+  backgroundColor: Colors.white24,
+  foregroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
+  onForegroundImageError: photoUrl == null ? null : (_, _) {},
+  child: Text(
+    _initials(user.fullName),
+    style: const TextStyle(
+      color: Colors.white,
+      fontSize: 16,
+      fontWeight: FontWeight.w800,
+    ),
+  ),
+),
                 ],
               ),
               const SizedBox(height: 24),
@@ -637,10 +692,13 @@ class _PaymentsTab extends StatelessWidget {
 }
 
 class _ProfileTab extends StatelessWidget {
+  final String? photoUrl;
+final bool uploadingPhoto;
+final VoidCallback? onChangePhoto;
   final UserModel user;
   final VoidCallback onLogout;
 final VoidCallback onChangePassword;
-  const _ProfileTab({required this.user, required this.onLogout, required this.onChangePassword});
+  const _ProfileTab({required this.user,required this.uploadingPhoto, required this.onLogout, required this.onChangePassword,required this.onChangePhoto, required this.photoUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -668,24 +726,28 @@ final VoidCallback onChangePassword;
           ),
           child: Column(
             children: [
-              Container(
-                width: 82,
-                height: 82,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.16),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white30, width: 2),
-                ),
-                child: Text(
-                  _initials(user.fullName.toUpperCase()),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 25,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
+             CircleAvatar(
+  radius: 41,
+  backgroundColor: Colors.white24,
+  foregroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
+  onForegroundImageError: photoUrl == null ? null : (_, _) {},
+  child: Text(
+    _initials(user.fullName.toUpperCase()),
+    style: const TextStyle(
+      color: Colors.white,
+      fontSize: 25,
+      fontWeight: FontWeight.w800,
+    ),
+  ),
+),
+if (onChangePhoto != null)
+  TextButton(
+    onPressed: uploadingPhoto ? null : onChangePhoto,
+    style: TextButton.styleFrom(foregroundColor: Colors.white),
+    child: Text(
+      uploadingPhoto ? 'Uploading…' : 'Change Profile Picture',
+    ),
+  ),
               const SizedBox(height: 14),
               Text(
                 user.fullName.toUpperCase(),

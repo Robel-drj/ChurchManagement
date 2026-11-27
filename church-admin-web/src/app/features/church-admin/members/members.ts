@@ -78,7 +78,10 @@ get canUpdateMemberPassword(): boolean {
     && roles?.length === 1
     && roles[0] === 'member';
 }
-
+hideFailedAvatar(event: Event): void {
+  const image = event.currentTarget as HTMLImageElement;
+  image.hidden = true;
+}
 closePasswordForm(): void {
   this.showPasswordForm = false;
   this.newPassword = '';

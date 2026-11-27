@@ -1,5 +1,8 @@
 import '../core/network/api_client.dart';
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../core/network/api_exceptions.dart';
 class MemberService {
   final ApiClient _apiClient;
 
@@ -44,4 +47,28 @@ class MemberService {
 
     return value.trim();
   }
+  Future<String> uploadProfilePicture(String churchId, XFile photo) async {
+  const maxBytes = 5 * 1024 * 1024;
+
+  if (await photo.length() > maxBytes) {
+    throw ApiException(message: 'The profile photo cannot exceed 5 MB.');
+  }
+
+  final response = await _apiClient.post(
+    '/churches/$churchId/my-profile/photo',
+    data: FormData.fromMap({
+      'photo': MultipartFile.fromBytes(
+        await photo.readAsBytes(),
+        filename: photo.name,
+      ),
+    }),
+  );
+
+  final photoUrl = response['data']?['profileImage'];
+  if (photoUrl is! String || photoUrl.isEmpty) {
+    throw ApiException(message: 'The server did not return the uploaded photo.');
+  }
+
+  return photoUrl;
+}
 }
