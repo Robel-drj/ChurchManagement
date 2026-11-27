@@ -5,6 +5,7 @@ import {
   registerSchema,
   loginSchema,
   refreshSchema,
+  changePasswordSchema
 } from "./auth.validation.js";
 
 const router = Router();
@@ -25,6 +26,12 @@ function validate(schema) {
     next();
   };
 }
+router.patch(
+  "/change-password",
+  authenticate,
+  validate(changePasswordSchema),
+  controller.changePassword
+);
 
 router.post("/register", validate(registerSchema), controller.register);
 router.post("/login", validate(loginSchema), controller.login);

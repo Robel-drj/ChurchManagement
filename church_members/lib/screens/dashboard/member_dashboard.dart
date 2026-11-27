@@ -13,6 +13,7 @@ import '../../services/post_service.dart';
 import '../../widgets/content_media_gallery.dart';
 import '../../widgets/post_like_button.dart';
 import '../auth/login_screen.dart';
+import '../auth/change_password_screen.dart';
 import '../posts/post_details_screen.dart';
 import 'member_payments_page.dart';
 import 'notification_bell_button.dart';
@@ -70,7 +71,19 @@ class _MemberDashboardState extends State<MemberDashboard> {
 
     return null;
   }
+Future<void> _openChangePassword() async {
+  final changed = await Navigator.of(context).push<bool>(
+    MaterialPageRoute(
+      builder: (_) => ChangePasswordScreen(authService: widget.authService),
+    ),
+  );
 
+  if (!mounted || changed != true) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Password changed successfully.')),
+  );
+}
   Future<void> _logout() async {
     await widget.authService.logout();
 
@@ -107,7 +120,11 @@ class _MemberDashboardState extends State<MemberDashboard> {
       _PostsTab(churchId: churchId, postService: widget.postService),
       _EventsTab(churchId: churchId, eventService: widget.eventService),
       _PaymentsTab(churchId: churchId, paymentService: widget.paymentService),
-      _ProfileTab(user: widget.user, onLogout: _logout),
+     _ProfileTab(
+  user: widget.user,
+  onLogout: _logout,
+  onChangePassword: _openChangePassword,
+),
     ];
 
     return Scaffold(
@@ -622,8 +639,8 @@ class _PaymentsTab extends StatelessWidget {
 class _ProfileTab extends StatelessWidget {
   final UserModel user;
   final VoidCallback onLogout;
-
-  const _ProfileTab({required this.user, required this.onLogout});
+final VoidCallback onChangePassword;
+  const _ProfileTab({required this.user, required this.onLogout, required this.onChangePassword});
 
   @override
   Widget build(BuildContext context) {
@@ -756,6 +773,12 @@ class _ProfileTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 22),
+        OutlinedButton.icon(
+  onPressed: onChangePassword,
+  icon: const Icon(Icons.lock_outline),
+  label: const Text('Change Password'),
+),
+const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: onLogout,
           icon: const Icon(Icons.logout_rounded),

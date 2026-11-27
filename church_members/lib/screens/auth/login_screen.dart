@@ -303,6 +303,31 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ],
                               ),
                             ),
+                            
+                            const SizedBox(height: 18),
+                            Align(
+  alignment: Alignment.centerRight,
+  child: TextButton(
+    onPressed: () {
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Forgot password?'),
+          content: const Text(
+            'Contact your church administrator to reset your password.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    },
+    child: const Text('Forgot password?'),
+  ),
+),
                             const SizedBox(height: 18),
                             Container(
                               padding: const EdgeInsets.symmetric(

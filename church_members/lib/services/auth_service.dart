@@ -45,7 +45,18 @@ class AuthService {
 
     return user;
   }
-
+Future<void> changePassword({
+  required String currentPassword,
+  required String newPassword,
+}) async {
+  await apiClient.patch(
+    '/auth/change-password',
+    data: {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    },
+  );
+}
   Future<UserModel> getCurrentUser() async {
     final response = await apiClient.get('/auth/me');
     final data = _responseData(response, 'account');

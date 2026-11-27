@@ -399,3 +399,40 @@ export async function getCurrentUser(userId) {
     ...accessContext,
   };
 }
+export async function changePassword(userId, currentPassword, newPassword) {
+  const { rows: [user] } = await pool.query(
+    `SELECT password_hash
+     FROM users
+     WHERE id = $1 AND account_status = 'active'`,
+    [userId]
+  );
+
+  if (!user || !await bcrypt.compare(currentPassword, user.password_hash)) {
+    const error = new Error("Current password is incorrect.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (await bcrypt.compare(newPassword, user.password_hash)) {
+    const error = new Error("Choose a password different from your current password.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+
+  const result = await pool.query(
+    `UPDATE users
+     SET password_hash = $1
+     WHERE id = $2
+       AND password_hash = $3
+       AND account_status = 'active'`,
+    [passwordHash, userId, user.password_hash]
+  );
+
+  if (result.rowCount === 0) {
+    const error = new Error("Your account changed while saving. Sign in again and retry.");
+    error.statusCode = 409;
+    throw error;
+  }
+}

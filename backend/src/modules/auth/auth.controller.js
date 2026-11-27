@@ -13,7 +13,19 @@ export async function register(req, res, next) {
     next(error);
   }
 }
+export async function changePassword(req, res, next) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    await authService.changePassword(req.user.id, currentPassword, newPassword);
 
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully.",
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 export async function login(req, res, next) {
   try {
     const { identifier, password } = req.body;
