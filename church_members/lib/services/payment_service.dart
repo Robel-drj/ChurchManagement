@@ -20,11 +20,13 @@ class PaymentService {
     required String categoryId,
     required double amount,
     required String idempotencyKey,
+    required String currentPassword,
     String? notes,
   }) async {
     final response = await _apiClient.post(
       '/churches/$churchId/finance/online-contributions',
       data: {
+        'current_password': currentPassword,
         'category_id': categoryId,
         'amount': amount,
         'idempotency_key': idempotencyKey,

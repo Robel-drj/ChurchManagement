@@ -131,7 +131,299 @@ class _MemberPaymentsPageState extends State<MemberPaymentsPage> {
 
     return null;
   }
+Future<String?> _confirmContribution(double amount) {
+  final formKey = GlobalKey<FormState>();
+  var password = '';
+  var obscurePassword = true;
+  final formattedAmount = NumberFormat('#,##0.00').format(amount);
 
+  return showDialog<String>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setDialogState) {
+        void submit() {
+          if (formKey.currentState!.validate()) {
+            Navigator.of(dialogContext).pop(password);
+          }
+        }
+
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(26),
+          ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          contentPadding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Top Lock Icon & Close Button
+                  Row(
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x264F46E5),
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.verified_user_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Confirm Contribution',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 17.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Verify your identity to proceed',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Close',
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // Highlighted Payment Amount Summary Card
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'TOTAL AMOUNT',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.7,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'ETB $formattedAmount',
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 21,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFA7F3D0)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.shield_rounded,
+                                size: 13,
+                                color: Color(0xFF059669),
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'CHAPA',
+                                style: TextStyle(
+                                  color: Color(0xFF059669),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  const Text(
+                    'Enter your church app password to continue to Chapa.',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Password Input with Visibility Toggle
+                  TextFormField(
+                    autofocus: true,
+                    obscureText: obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => submit(),
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Current password',
+                      hintText: 'Enter your password',
+                      filled: true,
+                      fillColor: AppColors.surfaceMuted.withValues(alpha: 0.5),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline_rounded,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                      suffixIcon: IconButton(
+                        tooltip: obscurePassword
+                            ? 'Show password'
+                            : 'Hide password',
+                        onPressed: () {
+                          setDialogState(() {
+                            obscurePassword = !obscurePassword;
+                          });
+                        },
+                        icon: Icon(
+                          obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: AppColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: AppColors.border),
+                      ),
+                    ),
+                    onChanged: (value) => password = value,
+                    validator: (value) => (value ?? '').isEmpty
+                        ? 'Enter your current password.'
+                        : null,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Action Buttons Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            side: BorderSide(color: AppColors.border),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 2,
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          onPressed: submit,
+                          icon: const Icon(Icons.lock_rounded, size: 17),
+                          label: const Text(
+                            'Continue to Chapa',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
   Future<void> _startPayment() async {
     FocusScope.of(context).unfocus();
 
@@ -154,14 +446,18 @@ class _MemberPaymentsPageState extends State<MemberPaymentsPage> {
 
     setState(() => _submitting = true);
 
-    try {
-      final response = await widget.paymentService.createOnlineContribution(
-        churchId: widget.churchId,
-        categoryId: _selectedCategoryId!,
-        amount: amount,
-        idempotencyKey: _pendingIdempotencyKey ??= _newIdempotencyKey(),
-        notes: _notesController.text,
-      );
+   try {
+  final currentPassword = await _confirmContribution(amount);
+  if (!mounted || currentPassword == null) return;
+
+ final response = await widget.paymentService.createOnlineContribution(
+    churchId: widget.churchId,
+    categoryId: _selectedCategoryId!,
+    amount: amount,
+    currentPassword: currentPassword,
+    idempotencyKey: _pendingIdempotencyKey ??= _newIdempotencyKey(),
+    notes: _notesController.text,
+  );
 
       final checkoutUrl = _findString(response, [
         'checkout_url',

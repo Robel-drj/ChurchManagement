@@ -1,7 +1,7 @@
 
 import { randomBytes } from "node:crypto";
 import { pool } from "../../config/database.js";
-
+import bcrypt from "bcrypt";
 import {
   initializeChapaCheckout,
   verifyChapaPayment,
@@ -79,6 +79,19 @@ export async function initializeOnlineContribution(
   userId,
   input
 ) {
+  const { rows: [account] } = await pool.query(
+  `SELECT password_hash
+   FROM users
+   WHERE id = $1 AND account_status = 'active'`,
+  [userId]
+);
+
+const passwordMatches =
+  account && await bcrypt.compare(input.current_password, account.password_hash);
+
+if (!passwordMatches) {
+  throw createHttpError("Current password is incorrect.", 403);
+}
   // Reuse an existing attempt when the client retries
   // the same operation.
   let row = await getAttemptByIdempotencyKey(

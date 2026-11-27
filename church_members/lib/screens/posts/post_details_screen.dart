@@ -50,162 +50,266 @@ class PostDetailsScreen extends StatelessWidget {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final galleryHeight = (screenHeight * 0.48).clamp(300.0, 520.0);
 
+    final displayAuthor = creator.isNotEmpty ? creator : 'Church Community';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Post details')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 36),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x294F46E5),
-                  blurRadius: 22,
-                  offset: Offset(0, 9),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0.5,
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        title: const Text(
+          'Post',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(
+            height: 1,
+            color: AppColors.border.withValues(alpha: 0.7),
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
               children: [
-                _PostTypeBadge(label: _titleCase(postType)),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    height: 1.2,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                if (publishedAt.isNotEmpty || creator.isNotEmpty) ...[
-                  const SizedBox(height: 17),
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 9,
-                    children: [
-                      if (publishedAt.isNotEmpty)
-                        _HeaderMetadata(
-                          icon: Icons.schedule_rounded,
-                          label: _formatPostDate(publishedAt),
-                        ),
-                      if (creator.isNotEmpty)
-                        _HeaderMetadata(
-                          icon: Icons.person_outline_rounded,
-                          label: creator,
-                        ),
+                // Main Social Post Card
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: AppColors.border.withValues(alpha: 0.85),
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x08101828),
+                        blurRadius: 20,
+                        offset: Offset(0, 8),
+                      ),
                     ],
                   ),
-                ],
-              ],
-            ),
-          ),
-          if (hasMedia) ...[
-            const SizedBox(height: 8),
-            ContentMediaGallery(
-              media: media,
-              height: galleryHeight,
-              imageFit: BoxFit.contain,
-              imageBackgroundColor: const Color(0xFF111827),
-              enableFullScreenImage: true,
-              enableDownload: true,
-            ),
-            if (hasImage) ...[
-              const SizedBox(height: 9),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.pinch_rounded,
-                    size: 15,
-                    color: AppColors.textSecondary,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    'Tap the image to view and zoom',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ],
-          if (canLike) ...[
-            const SizedBox(height: 18),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: PostLikeButton(
-                churchId: churchId!,
-                postId: postId,
-                postService: postService!,
-                initiallyLiked: _postBoolValue(post, const [
-                  'liked_by_me',
-                  'likedByMe',
-                ]),
-                initialLikeCount: _postIntValue(post, const [
-                  'like_count',
-                  'likeCount',
-                ]),
-                onChanged: _applyLikeState,
-              ),
-            ),
-          ],
-          const SizedBox(height: 22),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.notes_rounded,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                    SizedBox(width: 9),
-                    Text(
-                      'Message',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 1. Author & Metadata Header
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                                gradient: AppColors.primaryGradient,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.church_rounded,
+                                color: Colors.white,
+                                size: 21,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          displayAuthor,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        Icons.verified_rounded,
+                                        color: AppColors.primary,
+                                        size: 15,
+                                      ),
+                                    ],
+                                  ),
+                                  if (publishedAt.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _formatPostDate(publishedAt),
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            _PostTypeBadge(label: _titleCase(postType)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                const Divider(),
-                const SizedBox(height: 14),
-                Text(
-                  content.isEmpty
-                      ? 'No additional message was provided.'
-                      : content,
-                  style: TextStyle(
-                    color: content.isEmpty
-                        ? AppColors.textSecondary
-                        : AppColors.textPrimary,
-                    fontSize: 15,
-                    height: 1.65,
+
+                      // 2. Post Headline
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 23,
+                            height: 1.26,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                      ),
+
+                      // 3. Full Media Showcase
+                      if (hasMedia) ...[
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: ContentMediaGallery(
+                              media: media,
+                              height: galleryHeight,
+                              imageFit: BoxFit.contain,
+                              imageBackgroundColor: const Color(0xFF111827),
+                              enableFullScreenImage: true,
+                              enableDownload: true,
+                            ),
+                          ),
+                        ),
+                        if (hasImage) ...[
+                          const SizedBox(height: 10),
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceMuted,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.pinch_rounded,
+                                    size: 14,
+                                    color: AppColors.primary,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Tap image to view full screen & zoom',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+
+                      // 4. Full Article / Message Body
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+                        child: Text(
+                          content.isEmpty
+                              ? 'No additional message was provided.'
+                              : content,
+                          style: TextStyle(
+                            color: content.isEmpty
+                                ? AppColors.textSecondary
+                                : AppColors.textPrimary,
+                            fontSize: 15.5,
+                            height: 1.68,
+                          ),
+                        ),
+                      ),
+
+                      // 5. Social Engagement Bar
+                      if (canLike) ...[
+                        Divider(
+                          height: 1,
+                          color: AppColors.border.withValues(alpha: 0.75),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          child: Row(
+                            children: [
+                              PostLikeButton(
+                                churchId: churchId!,
+                                postId: postId,
+                                postService: postService!,
+                                initiallyLiked: _postBoolValue(post, const [
+                                  'liked_by_me',
+                                  'likedByMe',
+                                ]),
+                                initialLikeCount: _postIntValue(post, const [
+                                  'like_count',
+                                  'likeCount',
+                                ]),
+                                onChanged: _applyLikeState,
+                              ),
+                              const Spacer(),
+                              const Row(
+                                children: [
+                                  Icon(
+                                    Icons.favorite_border_rounded,
+                                    size: 15,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Show appreciation',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -224,47 +328,20 @@ class _PostTypeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.16),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white24),
       ),
       child: Text(
         label.toUpperCase(),
         style: const TextStyle(
-          color: Colors.white,
+          color: AppColors.primary,
           fontSize: 10,
           fontWeight: FontWeight.w800,
-          letterSpacing: 0.9,
+          letterSpacing: 0.7,
         ),
       ),
-    );
-  }
-}
-
-class _HeaderMetadata extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _HeaderMetadata({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: Colors.white70, size: 16),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
     );
   }
 }

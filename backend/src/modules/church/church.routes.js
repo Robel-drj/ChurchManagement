@@ -116,12 +116,30 @@ router.get("/public/active", getActiveChurches);
 // --------------------------------------------------
 // MEMBER ONLINE CONTRIBUTIONS
 // --------------------------------------------------
-
+const contributionConfirmationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  keyGenerator: (req) => req.user.id,
+  skipSuccessfulRequests: true,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many attempts to start a contribution. Try again in 15 minutes.",
+  },
+});
 // A member can initiate an online contribution for themselves.
 router.post(
   "/:churchId/finance/online-contributions",
   authenticate,
   requireChurchPermission("finance.contribution.create_self"),
+  initializeMemberPayment
+);
+router.post(
+  "/:churchId/finance/online-contributions",
+  authenticate,
+  requireChurchPermission("finance.contribution.create_self"),
+  contributionConfirmationLimiter,
   initializeMemberPayment
 );
 router.patch(

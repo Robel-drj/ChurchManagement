@@ -539,34 +539,39 @@ class _SocialTopBar extends StatelessWidget {
     return Row(
       children: [
         // Story-style Gradient Ring around User Avatar
-        Container(
-          padding: const EdgeInsets.all(2.2),
-          decoration: const BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            shape: BoxShape.circle,
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(1.5),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              shape: BoxShape.circle,
-            ),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: const Color(0xFFE0E7FF),
-              foregroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
-              onForegroundImageError: photoUrl == null ? null : (_, _) {},
-              child: Text(
-                _initials(user.fullName),
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
+       GestureDetector(
+  onTap: photoUrl == null || photoUrl!.isEmpty
+      ? null
+      : () => _viewProfilePicture(context, photoUrl),
+  child: Container(
+    padding: const EdgeInsets.all(2.2),
+    decoration: const BoxDecoration(
+      gradient: AppColors.primaryGradient,
+      shape: BoxShape.circle,
+    ),
+    child: Container(
+      padding: const EdgeInsets.all(1.5),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        shape: BoxShape.circle,
+      ),
+      child: CircleAvatar(
+        radius: 20,
+        backgroundColor: const Color(0xFFE0E7FF),
+        foregroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
+        onForegroundImageError: photoUrl == null ? null : (_, _) {},
+        child: Text(
+          _initials(user.fullName),
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
           ),
         ),
+      ),
+    ),
+  ),
+),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -978,8 +983,9 @@ class _ProfileTab extends StatelessWidget {
         // Cover Banner + Overlapping Avatar
         Stack(
           clipBehavior: Clip.none,
-          alignment: Alignment.bottomCenter,
-          children: [
+          alignment: Alignment.topCenter,
+children: [
+  const SizedBox(height: 201),
             Container(
               height: 155,
               width: double.infinity,
@@ -1014,11 +1020,11 @@ class _ProfileTab extends StatelessWidget {
               ),
             ),
             Positioned(
-              bottom: -46,
+              bottom: 0,
               child: GestureDetector(
-                onTap: onChangePhoto != null && !uploadingPhoto
-                    ? onChangePhoto
-                    : null,
+                onTap: photoUrl == null || photoUrl!.isEmpty
+    ? null
+    : () => _viewProfilePicture(context, photoUrl),
                 child: Stack(
                   children: [
                     Container(
@@ -1074,11 +1080,16 @@ class _ProfileTab extends StatelessWidget {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Icon(
-                                  Icons.camera_alt_rounded,
-                                  color: Colors.white,
-                                  size: 14,
-                                ),
+                              :  IconButton(
+    tooltip: 'Change profile picture',
+    onPressed: onChangePhoto,
+    padding: EdgeInsets.zero,
+    icon: const Icon(
+      Icons.camera_alt_rounded,
+      color: Colors.white,
+      size: 14,
+    ),
+  ),
                         ),
                       ),
                   ],
@@ -1088,7 +1099,7 @@ class _ProfileTab extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: 56),
+        const SizedBox(height: 10),
 
         // User Handle & Verified Status
         Padding(
@@ -2073,4 +2084,191 @@ String _greeting() {
   if (hour < 12) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
   return 'Good evening';
+}
+void _viewProfilePicture(BuildContext context, String? url) {
+  if (url == null || url.isEmpty) return;
+
+  showDialog<void>(
+    context: context,
+    barrierColor: const Color(0xF0090D16),
+    builder: (dialogContext) {
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: SafeArea(
+          child: Stack(
+            children: [
+              // Tap outside image area to close
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () => Navigator.of(dialogContext).pop(),
+                  behavior: HitTestBehavior.opaque,
+                  child: const SizedBox.expand(),
+                ),
+              ),
+
+              // Centered Pinch-to-Zoom Photo Stage
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 72,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        maxWidth: 460,
+                        maxHeight: 460,
+                      ),
+                      color: const Color(0xFF111827),
+                      child: InteractiveViewer(
+                        minScale: 1,
+                        maxScale: 4,
+                        child: Image.network(
+                          url,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const SizedBox(
+                              width: 280,
+                              height: 280,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (_, _, _) => const SizedBox(
+                            width: 300,
+                            height: 260,
+                            child: Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.broken_image_outlined,
+                                      color: Colors.white54,
+                                      size: 36,
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Could not load the profile picture.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Top Lightbox Header Bar
+              Positioned(
+                top: 10,
+                left: 16,
+                right: 16,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.account_circle_outlined,
+                            color: Colors.white,
+                            size: 17,
+                          ),
+                          SizedBox(width: 7),
+                          Text(
+                            'Profile Picture',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      tooltip: 'Close',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.14),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      icon: const Icon(Icons.close_rounded, size: 22),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Bottom Pinch-to-Zoom Hint Pill
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.pinch_rounded,
+                          color: Colors.white70,
+                          size: 15,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'Pinch to zoom • Tap outside to close',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
