@@ -381,75 +381,149 @@ export async function getChurchMemberDetails(churchId, membershipId) {
 
   return result.rows[0];
 }
-export async function updateChurchMemberProfile(
-  churchId,
-  membershipId,
-  updates
-) {
-  // Verify that this membership belongs to the selected church.
-  const membershipResult = await pool.query(
-    `SELECT id
-     FROM church_memberships
-     WHERE id = $1 AND church_id = $2`,
-    [membershipId, churchId]
-  );
+export async function updateChurchMemberProfile(churchId, membershipId, updates) {
+  const client = await pool.connect();
 
-  if (membershipResult.rowCount === 0) {
-    const error = new Error("Member not found in this church.");
-    error.statusCode = 404;
+  try {
+    await client.query("BEGIN");
+
+    const membership = await client.query(
+      `SELECT user_id
+       FROM church_memberships
+       WHERE id = $1 AND church_id = $2
+       FOR UPDATE`,
+      [membershipId, churchId]
+    );
+
+    if (membership.rowCount === 0) {
+      const error = new Error("Member not found in this church.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const { user_id: userId } = membership.rows[0];
+
+    if (updates.phone !== undefined) {
+      const phoneKey = getPhoneLookupKey(updates.phone);
+
+      if (!phoneKey) {
+        const error = new Error("Enter a phone number with at least 7 digits.");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      await client.query(
+        "SELECT id FROM users WHERE id = $1 FOR UPDATE",
+        [userId]
+      );
+
+      const { rows: [account] } = await client.query(
+        `SELECT
+           NOT EXISTS (
+             SELECT 1 FROM church_memberships
+             WHERE user_id = $1 AND id <> $2
+           ) AS belongs_only_to_this_church,
+           ARRAY(
+             SELECT cr.role_name
+             FROM membership_roles mr
+             JOIN church_roles cr
+               ON cr.id = mr.role_id AND cr.church_id = mr.church_id
+             WHERE mr.membership_id = $2 AND mr.church_id = $3
+           ) AS roles,
+           EXISTS (
+             SELECT 1 FROM user_platform_roles WHERE user_id = $1
+           ) AS has_platform_role`,
+        [userId, membershipId, churchId]
+      );
+
+      if (
+        !account.belongs_only_to_this_church ||
+        account.has_platform_role ||
+        account.roles.length !== 1 ||
+        account.roles[0] !== "member"
+      ) {
+        const error = new Error(
+          "Phone changes are available for accounts that belong only to this church and have only the member role."
+        );
+        error.statusCode = 403;
+        throw error;
+      }
+
+      // Serialize phone edits that use the same normalized number.
+      await client.query(
+        "SELECT pg_advisory_xact_lock(hashtext($1)::bigint)",
+        [`member-phone:${phoneKey}`]
+      );
+
+      const duplicate = await client.query(
+        `SELECT 1
+         FROM users
+         WHERE id <> $1
+           AND (
+             phone = $2
+             OR RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 9) = $3
+           )
+         LIMIT 1`,
+        [userId, updates.phone, phoneKey]
+      );
+
+      if (duplicate.rowCount > 0) {
+        const error = new Error("This phone number is already used by another account.");
+        error.statusCode = 409;
+        throw error;
+      }
+
+      await client.query(
+        "UPDATE users SET phone = $1 WHERE id = $2",
+        [updates.phone, userId]
+      );
+    }
+
+    const result = await client.query(
+      `INSERT INTO member_profiles (
+         membership_id, gender, date_of_birth, address,
+         emergency_contact, profile_image
+       )
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (membership_id) DO UPDATE SET
+         gender = CASE WHEN $7 THEN EXCLUDED.gender ELSE member_profiles.gender END,
+         date_of_birth = CASE WHEN $8 THEN EXCLUDED.date_of_birth ELSE member_profiles.date_of_birth END,
+         address = CASE WHEN $9 THEN EXCLUDED.address ELSE member_profiles.address END,
+         emergency_contact = CASE WHEN $10 THEN EXCLUDED.emergency_contact ELSE member_profiles.emergency_contact END,
+         profile_image = CASE WHEN $11 THEN EXCLUDED.profile_image ELSE member_profiles.profile_image END,
+         updated_at = CURRENT_TIMESTAMP
+       RETURNING id, membership_id, gender, date_of_birth,
+                 address, emergency_contact, profile_image, created_at, updated_at`,
+      [
+        membershipId,
+        updates.gender ?? null,
+        updates.date_of_birth ?? null,
+        updates.address ?? null,
+        updates.emergency_contact ?? null,
+        updates.profile_image ?? null,
+        Object.hasOwn(updates, "gender"),
+        Object.hasOwn(updates, "date_of_birth"),
+        Object.hasOwn(updates, "address"),
+        Object.hasOwn(updates, "emergency_contact"),
+        Object.hasOwn(updates, "profile_image"),
+      ]
+    );
+
+    await client.query("COMMIT");
+    return result.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    if (updates.phone !== undefined && error.code === "23505") {
+      const conflict = new Error("This phone number is already used by another account.");
+      conflict.statusCode = 409;
+      throw conflict;
+    }
+
     throw error;
+  } finally {
+    client.release();
   }
-
-  // The unique membership_id constraint allows a safe upsert.
-  const result = await pool.query(
-    `INSERT INTO member_profiles (
-       membership_id,
-       gender,
-       date_of_birth,
-       address,
-       emergency_contact,
-       profile_image
-     )
-     VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (membership_id)
-     DO UPDATE SET
-       gender = CASE WHEN $7 THEN EXCLUDED.gender
-                     ELSE member_profiles.gender END,
-       date_of_birth = CASE WHEN $8 THEN EXCLUDED.date_of_birth
-                            ELSE member_profiles.date_of_birth END,
-       address = CASE WHEN $9 THEN EXCLUDED.address
-                      ELSE member_profiles.address END,
-       emergency_contact = CASE WHEN $10 THEN EXCLUDED.emergency_contact
-                                ELSE member_profiles.emergency_contact END,
-       profile_image = CASE WHEN $11 THEN EXCLUDED.profile_image
-                            ELSE member_profiles.profile_image END,
-       updated_at = CURRENT_TIMESTAMP
-     RETURNING
-       id,
-       membership_id,
-       gender,
-       date_of_birth,
-       address,
-       emergency_contact,
-       profile_image,
-       created_at,
-       updated_at`,
-    [
-      membershipId,
-      updates.gender ?? null,
-      updates.date_of_birth ?? null,
-      updates.address ?? null,
-      updates.emergency_contact ?? null,
-      updates.profile_image ?? null,
-      Object.hasOwn(updates, "gender"),
-      Object.hasOwn(updates, "date_of_birth"),
-      Object.hasOwn(updates, "address"),
-      Object.hasOwn(updates, "emergency_contact"),
-      Object.hasOwn(updates, "profile_image"),
-    ]
-  );
-
-  return result.rows[0];
 }
 
 export async function updateChurchMembershipStatus(
@@ -550,6 +624,78 @@ export async function updateChurchMembershipStatus(
     await client.query("COMMIT");
 
     return updateResult.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+  
+}export async function updateChurchMemberPassword(churchId, membershipId, password) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const membership = await client.query(
+      `SELECT user_id
+       FROM church_memberships
+       WHERE id = $1 AND church_id = $2
+       FOR UPDATE`,
+      [membershipId, churchId]
+    );
+
+    if (membership.rowCount === 0) {
+      const error = new Error("Member not found in this church.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const { user_id: userId } = membership.rows[0];
+    await client.query("SELECT id FROM users WHERE id = $1 FOR UPDATE", [userId]);
+
+    const { rows: [account] } = await client.query(
+      `SELECT
+         NOT EXISTS (
+           SELECT 1
+           FROM church_memberships
+           WHERE user_id = $1 AND id <> $2
+         ) AS belongs_only_to_this_church,
+         ARRAY(
+           SELECT cr.role_name
+           FROM membership_roles mr
+           JOIN church_roles cr
+             ON cr.id = mr.role_id AND cr.church_id = mr.church_id
+           WHERE mr.membership_id = $2 AND mr.church_id = $3
+         ) AS roles,
+         EXISTS (
+           SELECT 1 FROM user_platform_roles WHERE user_id = $1
+         ) AS has_platform_role`,
+      [userId, membershipId, churchId]
+    );
+
+    if (
+      !account.belongs_only_to_this_church ||
+      account.has_platform_role ||
+      account.roles.length !== 1 ||
+      account.roles[0] !== "member"
+    ) {
+      const error = new Error(
+        "Password changes are available for accounts that belong only to this church and have only the member role."
+      );
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const rounds = Number(process.env.BCRYPT_ROUNDS) || 12;
+    const passwordHash = await bcrypt.hash(password, rounds);
+
+    await client.query(
+      "UPDATE users SET password_hash = $1 WHERE id = $2",
+      [passwordHash, userId]
+    );
+
+    await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

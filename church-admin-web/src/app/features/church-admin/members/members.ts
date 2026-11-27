@@ -63,8 +63,63 @@ export class Members implements OnInit {
     date_of_birth: '',
     address: '',
     emergency_contact: '',
+    phone: '',
   };
+showPasswordForm = false;
+passwordUpdating = false;
+newPassword = '';
+confirmPassword = '';
+passwordError = '';
+passwordSuccess = '';
 
+get canUpdateMemberPassword(): boolean {
+  const roles = this.selectedMember?.roles;
+  return !!this.authService.getActiveMembership()?.roles.includes('church_admin')
+    && roles?.length === 1
+    && roles[0] === 'member';
+}
+
+closePasswordForm(): void {
+  this.showPasswordForm = false;
+  this.newPassword = '';
+  this.confirmPassword = '';
+  this.passwordError = '';
+}
+
+updateMemberPassword(): void {
+  if (!this.selectedMember || !this.canUpdateMemberPassword || this.passwordUpdating) return;
+
+  this.passwordError = '';
+  this.passwordSuccess = '';
+
+  if (this.newPassword.length < 8 || new TextEncoder().encode(this.newPassword).length > 72) {
+    this.passwordError = 'Enter a password with at least 8 characters and at most 72 bytes.';
+    return;
+  }
+
+  if (this.newPassword !== this.confirmPassword) {
+    this.passwordError = 'The passwords must match.';
+    return;
+  }
+
+  this.passwordUpdating = true;
+
+  this.memberService
+    .updateMemberPassword(this.churchId, this.selectedMember.membership_id, this.newPassword)
+    .subscribe({
+      next: (response) => {
+        this.passwordUpdating = false;
+        this.closePasswordForm();
+        this.passwordSuccess = response.message;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        this.passwordUpdating = false;
+        this.passwordError = this.getErrorMessage(error, 'Unable to update member password.');
+        this.cdr.markForCheck();
+      },
+    });
+}
   constructor(
     private memberService: MemberService,
     private authService: AuthService
@@ -274,6 +329,9 @@ export class Members implements OnInit {
   }
 
   closeMemberDetails(): void {
+    if (this.passwordUpdating) return;
+this.closePasswordForm();
+this.passwordSuccess = '';
     this.showDetailsModal = false;
     this.selectedMember = null;
     this.showEditForm = false;
@@ -286,6 +344,7 @@ export class Members implements OnInit {
 
     this.editData = {
       gender: this.selectedMember.gender || '',
+      phone: this.selectedMember.phone || '',
       date_of_birth: this.formatDateForInput(
         this.selectedMember.date_of_birth
       ),
@@ -304,9 +363,20 @@ export class Members implements OnInit {
     if (!this.selectedMember) return;
 
     this.errorMessage = '';
+const phone = this.editData.phone.trim();
+const phoneChanged =
+  this.canUpdateMemberPassword && phone !== this.selectedMember.phone;
 
+if (
+  phoneChanged &&
+  (phone.replace(/\D/g, '').length < 7 || phone.length > 20)
+) {
+  this.errorMessage = 'Enter a phone number with at least 7 digits and at most 20 characters.';
+  return;
+}
     const payload: UpdateMemberProfileRequest = {
       gender: this.editData.gender.trim() || null,
+      ...(phoneChanged ? { phone } : {}),
       date_of_birth: this.editData.date_of_birth || null,
       address: this.editData.address.trim() || null,
       emergency_contact: this.editData.emergency_contact.trim() || null,

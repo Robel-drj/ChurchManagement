@@ -47,13 +47,18 @@ export const updateMemberProfileSchema = z.object({
   address: z.string().trim().max(1000).nullable().optional(),
 
   emergency_contact: z.string().trim().max(20).nullable().optional(),
-
+phone: z.string().trim().min(7).max(20).optional(),
   profile_image: z.string().trim().max(2048).nullable().optional(),
 }).strict().refine(
   (data) => Object.keys(data).length > 0,
   { message: "Provide at least one profile field to update." }
 );
-
+export const updateMemberPasswordSchema = z.object({
+  password: z.string().min(8).refine(
+    (password) => Buffer.byteLength(password, "utf8") <= 72,
+    { message: "Password must be at most 72 bytes." }
+  ),
+}).strict();
 export const updateMembershipStatusSchema = z.object({
   membership_status: z.enum(["active", "suspended"]),
 }).strict();

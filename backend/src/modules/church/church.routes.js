@@ -70,6 +70,7 @@ import {
   getMemberDetails,
   updateMemberProfile,
   updateMemberStatus,
+  updateMemberPassword
 } from "./member.controller.js";
 import { getDashboard } from "./church.controller.js";
 import {
@@ -121,7 +122,12 @@ router.post(
   requireChurchPermission("finance.contribution.create_self"),
   initializeMemberPayment
 );
-
+router.patch(
+  "/:churchId/members/:membershipId/password",
+  authenticate,
+  requireChurchPermission("members.update"),
+  updateMemberPassword
+);
 // A member can view their own contribution history.
 router.get(
   "/:churchId/finance/my-contributions",

@@ -75,6 +75,7 @@ export interface UpdateMemberProfileRequest {
   address?: string | null;
   emergency_contact?: string | null;
   profile_image?: string | null;
+  phone?: string;
 }
 
 export interface UpdateMemberStatusRequest {
@@ -157,6 +158,16 @@ export class MemberService {
       data
     );
   }
+  updateMemberPassword(
+  churchId: string,
+  membershipId: string,
+  password: string
+): Observable<{ success: boolean; message: string }> {
+  return this.http.patch<{ success: boolean; message: string }>(
+    `${this.apiUrl}/${churchId}/members/${membershipId}/password`,
+    { password }
+  );
+}
 
   // UPDATE MEMBERSHIP STATUS
   updateMemberStatus(

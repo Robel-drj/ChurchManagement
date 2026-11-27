@@ -440,19 +440,95 @@
         <button
           class="primary-btn"
           type="button"
-          *ngIf="!showEditForm"
+        *ngIf="!showEditForm && !showPasswordForm"
           (click)="openEditForm()"
         >
           Edit Profile
         </button>
-      </div>
 
+        <button
+          class="primary-btn"
+          type="button"
+          *ngIf="!showEditForm && !showPasswordForm && canUpdateMemberPassword"
+        (click)="passwordSuccess = ''; showPasswordForm = true"
+        >
+          Update Password
+        </button>
+      </div>
+<p *ngIf="passwordSuccess" class="alert alert-success" role="status">
+  {{ passwordSuccess }}
+</p>
+
+<form *ngIf="showPasswordForm" class="edit-section" (ngSubmit)="updateMemberPassword()">
+  <h3>Update Password for {{ selectedMember.full_name }}</h3>
+
+  <p *ngIf="passwordError" class="alert alert-error" role="alert">
+    {{ passwordError }}
+  </p>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label for="newMemberPassword">New Password</label>
+      <input
+        id="newMemberPassword"
+        name="newMemberPassword"
+        type="password"
+        [(ngModel)]="newPassword"
+        [disabled]="passwordUpdating"
+        autocomplete="new-password"
+        required
+        minlength="8"
+        maxlength="72"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="confirmMemberPassword">Confirm Password</label>
+      <input
+        id="confirmMemberPassword"
+        name="confirmMemberPassword"
+        type="password"
+        [(ngModel)]="confirmPassword"
+        [disabled]="passwordUpdating"
+        autocomplete="new-password"
+        required
+        maxlength="72"
+      />
+    </div>
+  </div>
+
+  <div class="modal-actions">
+    <button type="button" class="secondary-btn" (click)="closePasswordForm()"
+            [disabled]="passwordUpdating">
+      Cancel
+    </button>
+    <button type="submit" class="primary-btn" [disabled]="passwordUpdating">
+      {{ passwordUpdating ? 'Updating…' : 'Save Password' }}
+    </button>
+  </div>
+</form>
       <!-- EDIT PROFILE FORM -->
       <div *ngIf="showEditForm" class="edit-section">
         <h3>Edit Member Profile</h3>
-
+<p *ngIf="errorMessage" class="alert alert-error" role="alert">
+  {{ errorMessage }}
+</p>
         <div class="form-grid">
           <div class="form-group">
+            <div class="form-group" *ngIf="canUpdateMemberPassword">
+  <label for="editMemberPhone">Phone Number</label>
+  <input
+    id="editMemberPhone"
+    name="editMemberPhone"
+    type="tel"
+    [(ngModel)]="editData.phone"
+    autocomplete="tel"
+    minlength="7"
+    maxlength="20"
+    [disabled]="saving"
+    required
+  />
+</div>
             <label>Gender</label>
             <select name="editGender" [(ngModel)]="editData.gender">
               <option value="">Not specified</option>

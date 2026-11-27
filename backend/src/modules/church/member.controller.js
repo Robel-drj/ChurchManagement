@@ -5,6 +5,7 @@ import {
   getChurchMemberDetails,
   updateChurchMemberProfile,
   updateChurchMembershipStatus,
+  updateChurchMemberPassword,
 } from "./member.service.js";
 
 import {
@@ -12,6 +13,7 @@ import {
   memberIdSchema,
   updateMemberProfileSchema,
   updateMembershipStatusSchema,
+  updateMemberPasswordSchema,
 } from "./member.validation.js";
 export async function registerMember(req, res, next) {
   try {
@@ -172,6 +174,41 @@ export async function updateMemberStatus(req, res, next) {
       success: true,
       message: "Membership status updated successfully.",
       data: membership,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+export async function updateMemberPassword(req, res, next) {
+  try {
+    if (!req.churchRoles.includes("church_admin")) {
+      return res.status(403).json({
+        success: false,
+        message: "Only church administrators can update member passwords.",
+      });
+    }
+
+    const membershipId = memberIdSchema.safeParse(req.params.membershipId);
+    if (!membershipId.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid membership ID.",
+      });
+    }
+
+    const input = updateMemberPasswordSchema.safeParse(req.body);
+    if (!input.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a password with at least 8 characters and at most 72 bytes.",
+      });
+    }
+
+    await updateChurchMemberPassword(req.church.id, membershipId.data, input.data.password);
+
+    return res.status(200).json({
+      success: true,
+      message: "Member password updated successfully.",
     });
   } catch (error) {
     next(error);
