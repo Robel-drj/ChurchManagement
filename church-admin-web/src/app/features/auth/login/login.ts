@@ -5,8 +5,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 import { AuthService } from '../../../core/service/auth.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -21,6 +22,7 @@ import { Router } from '@angular/router';
   styleUrl: './login.scss',
 })
 export class Login {
+  private readonly route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
 private readonly router = inject(Router);

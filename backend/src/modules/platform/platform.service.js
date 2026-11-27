@@ -29,7 +29,8 @@ const PERMISSIONS = [
   ["church.dashboard.view", "View the church dashboard."],
   ["church.profile.read", "View church information."],
   ["church.profile.update", "Update church information."],
-
+["notifications.read", "Read church notifications."],
+["notifications.manage", "Create and manage church notifications."],
   ["members.read", "View church members."],
   ["members.create", "Register church members."],
   ["members.update", "Update church member information."],
@@ -39,7 +40,8 @@ const PERMISSIONS = [
   ["finance.transaction.update", "Update authorized financial transactions."],
   ["finance.payment_methods.read", "View available payment methods."],
   ["finance.payment_methods.manage", "Manage church payment methods."],
-
+["finance.contribution.create_self", "Start an online contribution."],
+["finance.contribution.read_own", "View your own online contributions."],
   ["content.read_published", "View published church content."],
   ["content.create", "Create church content."],
   ["content.update", "Update church content."],
@@ -67,6 +69,8 @@ const ROLE_PERMISSIONS = {
     "finance.transaction.create",
     "finance.transaction.update",
     "finance.payment_methods.read",
+    "finance.contribution.create_self",
+"finance.contribution.read_own",
   ],
 
   secretary: [
@@ -92,6 +96,7 @@ const ROLE_PERMISSIONS = {
   ],
 
   member: [
+    "notifications.read",
     "content.read_published",
     "events.read_published",
     "finance.payment_methods.read",
