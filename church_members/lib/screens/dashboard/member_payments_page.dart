@@ -148,7 +148,7 @@ Future<String?> _confirmContribution(double amount) {
         }
 
         return AlertDialog(
-          backgroundColor: AppColors.surface,
+         backgroundColor: Theme.of(context).colorScheme.surface,
           surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(26),
@@ -187,14 +187,14 @@ Future<String?> _confirmContribution(double amount) {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Confirm Contribution',
                               style: TextStyle(
-                                color: AppColors.textPrimary,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 17.5,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.3,
@@ -204,7 +204,7 @@ Future<String?> _confirmContribution(double amount) {
                             Text(
                               'Verify your identity to proceed',
                               style: TextStyle(
-                                color: AppColors.textSecondary,
+                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -215,9 +215,9 @@ Future<String?> _confirmContribution(double amount) {
                       IconButton(
                         tooltip: 'Close',
                         onPressed: () => Navigator.of(dialogContext).pop(),
-                        icon: const Icon(
+                        icon:  Icon(
                           Icons.close_rounded,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           size: 20,
                         ),
                       ),
@@ -244,10 +244,10 @@ Future<String?> _confirmContribution(double amount) {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                             Text(
                               'TOTAL AMOUNT',
                               style: TextStyle(
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.7,
@@ -303,10 +303,10 @@ Future<String?> _confirmContribution(double amount) {
 
                   const SizedBox(height: 16),
 
-                  const Text(
+                   Text(
                     'Enter your church app password to continue to Chapa.',
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -320,8 +320,8 @@ Future<String?> _confirmContribution(double amount) {
                     obscureText: obscurePassword,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => submit(),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style:  TextStyle(
+                     color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -329,10 +329,10 @@ Future<String?> _confirmContribution(double amount) {
                       labelText: 'Current password',
                       hintText: 'Enter your password',
                       filled: true,
-                      fillColor: AppColors.surfaceMuted.withValues(alpha: 0.5),
-                      prefixIcon: const Icon(
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      prefixIcon:  Icon(
                         Icons.lock_outline_rounded,
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         size: 20,
                       ),
                       suffixIcon: IconButton(
@@ -348,7 +348,7 @@ Future<String?> _confirmContribution(double amount) {
                           obscurePassword
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           size: 20,
                         ),
                       ),
@@ -382,10 +382,10 @@ Future<String?> _confirmContribution(double amount) {
                             ),
                           ),
                           onPressed: () => Navigator.of(dialogContext).pop(),
-                          child: const Text(
+                          child:  Text(
                             'Cancel',
                             style: TextStyle(
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -572,7 +572,7 @@ Future<String?> _confirmContribution(double amount) {
       case 'initiating':
         return AppColors.warning;
       default:
-        return AppColors.textSecondary;
+        return Theme.of(context).colorScheme.onSurfaceVariant;
     }
   }
 
@@ -653,13 +653,13 @@ Future<String?> _confirmContribution(double amount) {
       ),
     );
   }
-
+ColorScheme get _colors => Theme.of(context).colorScheme;
   Widget _buildCheckoutCard() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: _colors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.9)),
+        border: Border.all(color: _colors.outline.withValues(alpha: 0.9)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0B101828),
@@ -690,14 +690,14 @@ Future<String?> _confirmContribution(double amount) {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Send Contribution',
                         style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: _colors.onSurface,
                           fontSize: 16.5,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.2,
@@ -707,7 +707,7 @@ Future<String?> _confirmContribution(double amount) {
                       Text(
                         'Instant online transfer via Chapa',
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: _colors.onSurfaceVariant,
                           fontSize: 12,
                         ),
                       ),
@@ -757,10 +757,10 @@ Future<String?> _confirmContribution(double amount) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 1. Category Pill Selector
-                const Text(
+                 Text(
                   'SELECT PURPOSE',
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color:_colors.onSurfaceVariant,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.8,
@@ -772,13 +772,13 @@ Future<String?> _confirmContribution(double amount) {
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceMuted,
+                      color: _colors.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Text(
+                    child:  Text(
                       'No contribution categories available right now.',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: _colors.onSurfaceVariant,
                         fontSize: 13,
                       ),
                     ),
@@ -813,17 +813,17 @@ Future<String?> _confirmContribution(double amount) {
                           size: 16,
                           color: isSelected
                               ? Colors.white
-                              : AppColors.textSecondary,
+                              :_colors.onSurfaceVariant,
                         ),
                         labelStyle: TextStyle(
                           color: isSelected
                               ? Colors.white
-                              : AppColors.textPrimary,
+                              : _colors.onSurface,
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
                         selectedColor: AppColors.primary,
-                        backgroundColor: AppColors.surfaceMuted,
+                        backgroundColor: _colors.surfaceContainerHighest,
                         side: BorderSide(
                           color: isSelected
                               ? AppColors.primary
@@ -843,10 +843,10 @@ Future<String?> _confirmContribution(double amount) {
                 const SizedBox(height: 20),
 
                 // 2. Hero Amount Box
-                const Text(
+                 Text(
                   'AMOUNT TO GIVE',
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: _colors.onSurfaceVariant,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.8,
@@ -899,8 +899,8 @@ Future<String?> _confirmContribution(double amount) {
                                   const TextInputType.numberWithOptions(
                                 decimal: true,
                               ),
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
+                              style:  TextStyle(
+                                color: _colors.onSurface,
                                 fontSize: 28,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -0.5,
@@ -946,15 +946,15 @@ Future<String?> _confirmContribution(double amount) {
                                     vertical: 7,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.surface,
+                                    color: _colors.surface,
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(color: AppColors.border),
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
                                     '+$preset',
-                                    style: const TextStyle(
-                                      color: AppColors.textPrimary,
+                                    style:  TextStyle(
+                                      color: _colors.onSurface,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -980,16 +980,16 @@ Future<String?> _confirmContribution(double amount) {
                   style: const TextStyle(fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Add a prayer request or note (optional)',
-                    hintStyle: const TextStyle(
-                      color: AppColors.textSecondary,
+                    hintStyle:  TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 13,
                     ),
-                    prefixIcon: const Icon(
+                    prefixIcon:  Icon(
                       Icons.edit_note_rounded,
-                      color: AppColors.textSecondary,
+                      color: _colors.onSurfaceVariant,
                     ),
                     filled: true,
-                    fillColor: AppColors.surfaceMuted.withValues(alpha: 0.6),
+                    fillColor: _colors.surfaceContainerHighest.withValues(alpha: 0.6),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 12,
@@ -1067,7 +1067,7 @@ Future<String?> _confirmContribution(double amount) {
                 const SizedBox(height: 12),
 
                 // Security Footer
-                const Row(
+                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
@@ -1082,7 +1082,7 @@ Future<String?> _confirmContribution(double amount) {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textSecondary,
+                          color: _colors.onSurfaceVariant,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1100,14 +1100,14 @@ Future<String?> _confirmContribution(double amount) {
   Widget _buildHistoryHeader() {
     return Row(
       children: [
-        const Expanded(
+         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Transaction History',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: _colors.onSurface,
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.2,
@@ -1117,7 +1117,7 @@ Future<String?> _confirmContribution(double amount) {
               Text(
                 'Tap refresh on any receipt to sync status',
                 style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: _colors.onSurfaceVariant,
                   fontSize: 12,
                 ),
               ),
@@ -1148,7 +1148,7 @@ Future<String?> _confirmContribution(double amount) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: _colors.surface,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.border),
       ),
@@ -1168,20 +1168,20 @@ Future<String?> _confirmContribution(double amount) {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+           Text(
             'No contributions yet',
             style: TextStyle(
-              color: AppColors.textPrimary,
+              color: _colors.onSurface,
               fontSize: 15,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+           Text(
             'Your digital receipts and payment history will appear here once you give.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: _colors.onSurfaceVariant,
               fontSize: 12.5,
               height: 1.4,
             ),
@@ -1213,7 +1213,7 @@ Future<String?> _confirmContribution(double amount) {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: _colors.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border.withValues(alpha: 0.85)),
         boxShadow: const [
@@ -1255,8 +1255,8 @@ Future<String?> _confirmContribution(double amount) {
                   category.toString(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style:  TextStyle(
+                    color: _colors.onSurface,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1290,8 +1290,8 @@ Future<String?> _confirmContribution(double amount) {
                           _formatContributionDate(date.toString()),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                          style:  TextStyle(
+                            color: _colors.onSurfaceVariant,
                             fontSize: 11.5,
                           ),
                         ),
@@ -1309,8 +1309,8 @@ Future<String?> _confirmContribution(double amount) {
             children: [
               Text(
                 _formatAmount(amount),
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
+                style:  TextStyle(
+                  color: _colors.onSurface,
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.3,
@@ -1536,11 +1536,11 @@ class _PaymentLoadingState extends StatelessWidget {
     return Container(
       height: 240,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.border),
       ),
-      child: const Center(
+      child:  Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1549,7 +1549,7 @@ class _PaymentLoadingState extends StatelessWidget {
             Text(
               'Loading payment options...',
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),

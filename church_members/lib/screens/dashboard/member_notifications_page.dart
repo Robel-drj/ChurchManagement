@@ -271,19 +271,19 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0.5,
-        backgroundColor: AppColors.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 4,
         title: Row(
           children: [
-            const Text(
+             Text(
               'Activity',
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.4,
@@ -377,7 +377,7 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(22),
               border: Border.all(color: AppColors.border),
             ),
@@ -398,10 +398,10 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const Text(
+                 Text(
                   'Unable to load notifications',
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),
@@ -410,8 +410,8 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
                 Text(
                   '$_error',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style:  TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12.5,
                     height: 1.4,
                   ),
@@ -441,7 +441,7 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: AppColors.border),
               ),
@@ -461,20 +461,20 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                   Text(
                     'All caught up!',
                     style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                   Text(
                     'You have no notifications yet. Church updates, event reminders, and giving receipts will appear here.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 13,
                       height: 1.45,
                     ),
@@ -521,7 +521,7 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
       decoration: BoxDecoration(
         color: isUnread
             ? const Color(0xFFF5F7FF)
-            : AppColors.surface,
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isUnread
@@ -555,7 +555,7 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
                     decoration: BoxDecoration(
                       color: isUnread
                           ? visual.bgColor
-                          : AppColors.surfaceMuted,
+                          :Theme.of(context).colorScheme.surfaceContainerHighest,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -563,7 +563,7 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
                       size: 21,
                       color: isUnread
                           ? visual.color
-                          : AppColors.textSecondary,
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   if (isUnread)
@@ -602,7 +602,7 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
                           decoration: BoxDecoration(
                             color: isUnread
                                 ? visual.color.withValues(alpha: 0.12)
-                                : AppColors.surfaceMuted,
+                                : Theme.of(context).colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -610,7 +610,7 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
                             style: TextStyle(
                               color: isUnread
                                   ? visual.color
-                                  : AppColors.textSecondary,
+                                  : Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 9.5,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.5,
@@ -624,7 +624,7 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
                             style: TextStyle(
                               color: isUnread
                                   ? AppColors.primary
-                                  : AppColors.textSecondary,
+                                  : Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 11,
                               fontWeight: isUnread
                                   ? FontWeight.w700
@@ -637,7 +637,7 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
                     Text(
                       notification.title,
                       style: TextStyle(
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 14.5,
                         fontWeight: isUnread
                             ? FontWeight.w800
@@ -650,8 +650,8 @@ class _MemberNotificationsPageState extends State<MemberNotificationsPage> {
                       notification.message,
                       style: TextStyle(
                         color: isUnread
-                            ? AppColors.textPrimary.withValues(alpha: 0.85)
-                            : AppColors.textSecondary,
+                            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85)
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 13,
                         height: 1.4,
                       ),
@@ -690,7 +690,7 @@ class _NotificationSkeletonCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
       ),
@@ -700,8 +700,8 @@ class _NotificationSkeletonCard extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceMuted,
+            decoration:  BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
           ),
@@ -714,7 +714,7 @@ class _NotificationSkeletonCard extends StatelessWidget {
                   width: 72,
                   height: 12,
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ),
@@ -723,7 +723,7 @@ class _NotificationSkeletonCard extends StatelessWidget {
                   width: 180,
                   height: 14,
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ),
@@ -732,7 +732,7 @@ class _NotificationSkeletonCard extends StatelessWidget {
                   width: double.infinity,
                   height: 12,
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ),

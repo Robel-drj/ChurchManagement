@@ -15,8 +15,12 @@ import 'services/member_service.dart';
 import 'services/notification_service.dart';
 import 'services/payment_service.dart';
 import 'services/post_service.dart';
+import 'core/theme/theme_settings.dart';
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await loadThemeSetting();
 
-void main() {
+  // Your existing tokenStorage and service setup continues here.
   WidgetsFlutterBinding.ensureInitialized();
   final tokenStorage = TokenStorage();
   final apiClient = ApiClient(tokenStorage);
@@ -64,22 +68,30 @@ class ChurchMemberApp extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Church Member',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: _SessionGate(
-        authService: authService,
-        churchService: churchService,
-        memberService: memberService,
-        postService: postService,
-        eventService: eventService,
-        paymentService: paymentService,
-        notificationService: notificationService,
-      ),
-    );
-  }
+Widget build(BuildContext context) {
+  return ValueListenableBuilder<bool>(
+    valueListenable: darkModeEnabled,
+    builder: (context, enabled, child) {
+      return MaterialApp(
+        title: 'Church Member',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: enabled ? ThemeMode.dark : ThemeMode.light,
+        home: child,
+      );
+    },
+    child: _SessionGate(
+      authService: authService,
+      churchService: churchService,
+      memberService: memberService,
+      postService: postService,
+      eventService: eventService,
+      paymentService: paymentService,
+      notificationService: notificationService,
+    ),
+  );
+}
 }
 
 class _SessionGate extends StatefulWidget {

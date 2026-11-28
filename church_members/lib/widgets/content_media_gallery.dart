@@ -176,7 +176,7 @@ class _NetworkImage extends StatelessWidget {
                       Icons.broken_image_outlined,
                       color: darkBackground
                           ? Colors.white70
-                          : AppColors.textSecondary,
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(height: 6),
                     const Text('Image unavailable'),
@@ -1072,7 +1072,7 @@ class _MediaStatus extends StatelessWidget {
       child: Center(
         child: DefaultTextStyle.merge(
           style: TextStyle(
-            color: dark ? Colors.white70 : AppColors.textSecondary,
+            color: dark ? Colors.white70 : Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 13,
           ),
           child: child,

@@ -3,7 +3,19 @@ import 'app_colors.dart';
 
 class AppTheme {
   AppTheme._();
+static ThemeData get darkTheme {
+  final colors = ColorScheme.fromSeed(
+    seedColor: AppColors.primary,
+    brightness: Brightness.dark,
+  );
 
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colors,
+    scaffoldBackgroundColor: const Color(0xFF10131C),
+    fontFamily: 'Roboto',
+  );
+}
   static ThemeData get lightTheme {
     const colorScheme = ColorScheme.light(
       primary: AppColors.primary,

@@ -32,7 +32,7 @@ class ApiConfig {
     }
 
     if (!isWeb && platform == TargetPlatform.android) {
-      return 'http://10.0.2.2:3000/api';
+      return 'http://192.168.1.5:3000/api';
     }
 
     return 'http://localhost:3000/api';

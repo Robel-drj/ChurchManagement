@@ -107,10 +107,10 @@ class _PostLikeButtonState extends State<PostLikeButton> {
 
   @override
   Widget build(BuildContext context) {
-    final color = _liked ? const Color(0xFFE11D48) : AppColors.textSecondary;
+    final color = _liked ? const Color(0xFFE11D48) :Theme.of(context).colorScheme.onSurfaceVariant;
     final background = _liked
         ? const Color(0xFFFFE4E9)
-        : AppColors.surfaceMuted;
+        : Theme.of(context).colorScheme.surfaceContainerHighest;
     final label = _liked ? 'Unlike post' : 'Like post';
 
     return Tooltip(

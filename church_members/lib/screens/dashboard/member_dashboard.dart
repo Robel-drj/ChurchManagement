@@ -19,7 +19,7 @@ import '../auth/login_screen.dart';
 import '../posts/post_details_screen.dart';
 import 'member_payments_page.dart';
 import 'notification_bell_button.dart';
-
+import '../../core/theme/theme_settings.dart';
 class MemberDashboard extends StatefulWidget {
   final UserModel user;
   final AuthService authService;
@@ -188,14 +188,14 @@ class _MemberDashboardState extends State<MemberDashboard> {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      
       body: SafeArea(
         bottom: false,
         child: IndexedStack(index: _selectedIndex, children: pages),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
+     bottomNavigationBar: DecoratedBox(
+  decoration: BoxDecoration(
+    color: Theme.of(context).colorScheme.surface,
           border: Border(
             top: BorderSide(color: AppColors.border.withValues(alpha: 0.8)),
           ),
@@ -212,7 +212,7 @@ class _MemberDashboardState extends State<MemberDashboard> {
           child: NavigationBar(
             height: 66,
             elevation: 0,
-            backgroundColor: AppColors.surface,
+           backgroundColor: Theme.of(context).colorScheme.surface,
             indicatorColor: AppColors.primary.withValues(alpha: 0.12),
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             selectedIndex: _selectedIndex,
@@ -281,7 +281,7 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      color: AppColors.primary,
+      color: Theme.of(context).colorScheme.onSurface,
       onRefresh: () async {
         if (churchId == null) return;
         await Future.wait([
@@ -298,7 +298,7 @@ class _HomeTab extends StatelessWidget {
             snap: true,
             elevation: 0,
             scrolledUnderElevation: 0.5,
-            backgroundColor: AppColors.surface,
+           backgroundColor: Theme.of(context).colorScheme.surface,
             toolbarHeight: 68,
             titleSpacing: 18,
             title: _SocialTopBar(
@@ -327,7 +327,7 @@ class _HomeTab extends StatelessWidget {
             // Horizontal "Stories / Upcoming Events" Strip
             SliverToBoxAdapter(
               child: Container(
-                color: AppColors.surface,
+               color: Theme.of(context).colorScheme.surface,
                 padding: const EdgeInsets.only(top: 6, bottom: 18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,10 +336,10 @@ class _HomeTab extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 18),
                       child: Row(
                         children: [
-                          const Text(
+                           Text(
                             'Upcoming Gatherings',
                             style: TextStyle(
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.2,
@@ -387,21 +387,21 @@ class _HomeTab extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: AppColors.surfaceMuted,
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              child: const Row(
+                              child: Row(
                                 children: [
                                   Icon(
                                     Icons.event_available_outlined,
                                     size: 18,
-                                    color: AppColors.textSecondary,
+                                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
                                   SizedBox(width: 10),
                                   Text(
                                     'No upcoming events scheduled yet.',
                                     style: TextStyle(
-                                      color: AppColors.textSecondary,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -440,10 +440,10 @@ class _HomeTab extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
                 child: Row(
                   children: [
-                    const Text(
+                     Text(
                       'Community Feed',
                       style: TextStyle(
-                        color: AppColors.textPrimary,
+                       color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.2,
@@ -551,8 +551,8 @@ class _SocialTopBar extends StatelessWidget {
     ),
     child: Container(
       padding: const EdgeInsets.all(1.5),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration:  BoxDecoration(
+       color: Theme.of(context).colorScheme.surface,
         shape: BoxShape.circle,
       ),
       child: CircleAvatar(
@@ -580,8 +580,8 @@ class _SocialTopBar extends StatelessWidget {
             children: [
               Text(
                 _greeting(),
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style:  TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -590,8 +590,8 @@ class _SocialTopBar extends StatelessWidget {
                 _titleCase(_firstName(user.fullName)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
+                style:  TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.4,
@@ -603,11 +603,11 @@ class _SocialTopBar extends StatelessWidget {
         if (churchId != null)
           Container(
             decoration: BoxDecoration(
-              color: AppColors.surfaceMuted,
+             color: Theme.of(context).colorScheme.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
             child: IconTheme(
-              data: const IconThemeData(color: AppColors.textPrimary),
+              data:  IconThemeData(color: Theme.of(context).colorScheme.onSurface,),
               child: NotificationBellButton(
                 churchId: churchId!,
                 notificationService: notificationService,
@@ -627,6 +627,7 @@ class _EventStoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final title = _firstValue(
       event,
       ['title', 'event_title', 'name'],
@@ -667,9 +668,10 @@ class _EventStoryCard extends StatelessWidget {
               width: 50,
               height: 64,
               decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(13),
-              ),
+  color: colors.surface,
+  borderRadius: BorderRadius.circular(18),
+  border: Border.all(color: colors.outlineVariant),
+),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -705,8 +707,8 @@ class _EventStoryCard extends StatelessWidget {
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style:  TextStyle(
+                     color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                       height: 1.25,
@@ -732,8 +734,8 @@ class _EventStoryCard extends StatelessWidget {
                                   : 'Upcoming'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                          style:  TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
@@ -866,7 +868,7 @@ class _ProfileTab extends StatelessWidget {
       context: context,
       useSafeArea: true,
       showDragHandle: true,
-      backgroundColor: AppColors.surface,
+     
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -884,16 +886,27 @@ class _ProfileTab extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                     
                     ),
                   ),
                 ),
                 const SizedBox(height: 6),
+                ValueListenableBuilder<bool>(
+  valueListenable: darkModeEnabled,
+  builder: (context, enabled, child) {
+    return SwitchListTile(
+      secondary: const Icon(Icons.dark_mode_outlined),
+      title: const Text('Dark Mode'),
+      value: enabled,
+      onChanged: setDarkMode,
+    );
+  },
+),
                 ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceMuted,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -920,7 +933,7 @@ class _ProfileTab extends StatelessWidget {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceMuted,
+                     color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -1109,8 +1122,8 @@ children: [
               Text(
                 _titleCase(user.fullName),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
+                style:  TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
@@ -1155,10 +1168,10 @@ children: [
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+               Text(
                 'About',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                 ),
@@ -1166,7 +1179,7 @@ children: [
               const SizedBox(height: 10),
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                 color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.border),
                 ),
@@ -1196,7 +1209,7 @@ children: [
                       value: _titleCase(user.accountStatus),
                       valueColor: user.accountStatus.toLowerCase() == 'active'
                           ? AppColors.success
-                          : AppColors.textPrimary,
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ],
                 ),
@@ -1207,7 +1220,7 @@ children: [
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: AppColors.surface,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
                     side: const BorderSide(color: AppColors.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -1272,7 +1285,7 @@ class _ProfileInfoRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.surfaceMuted,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: AppColors.primary, size: 20),
@@ -1284,8 +1297,8 @@ class _ProfileInfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style:  TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1294,7 +1307,7 @@ class _ProfileInfoRow extends StatelessWidget {
                 Text(
                   value,
                   style: TextStyle(
-                    color: valueColor ?? AppColors.textPrimary,
+                    color: valueColor ?? Theme.of(context).colorScheme.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1442,8 +1455,8 @@ class _PageTitle extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style:  TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 13,
                   ),
                 ),
@@ -1521,7 +1534,7 @@ class _ContentCardState extends State<_ContentCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.border.withValues(alpha: 0.85)),
         boxShadow: const [
@@ -1574,8 +1587,8 @@ class _ContentCardState extends State<_ContentCard> {
                                 authorName,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
+                                style:  TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -1595,8 +1608,8 @@ class _ContentCardState extends State<_ContentCard> {
                             isPost
                                 ? _timeAgo(rawDate)
                                 : _formatDate(rawDate),
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 11.5,
                               fontWeight: FontWeight.w500,
                             ),
@@ -1623,8 +1636,8 @@ class _ContentCardState extends State<_ContentCard> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style:  TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w800,
                       fontSize: 16.5,
                       height: 1.3,
@@ -1637,8 +1650,8 @@ class _ContentCardState extends State<_ContentCard> {
                       description,
                       maxLines: isPost ? 3 : null,
                       overflow: isPost ? TextOverflow.ellipsis : null,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style:  TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 14,
                         height: 1.5,
                       ),
@@ -1658,7 +1671,7 @@ class _ContentCardState extends State<_ContentCard> {
                     vertical: 9,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted,
+                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Wrap(
@@ -1827,8 +1840,8 @@ class _MetadataItem extends StatelessWidget {
           child: Text(
             label,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style:  TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -1857,7 +1870,7 @@ class _LoadingCards extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 14),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: AppColors.border),
           ),
@@ -1909,7 +1922,7 @@ class _Placeholder extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(radius),
       ),
     );
@@ -1946,9 +1959,9 @@ class _EmptyMessage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1956,28 +1969,28 @@ class _EmptyMessage extends StatelessWidget {
           Container(
             width: 56,
             height: 56,
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceMuted,
+            decoration:  BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.primary, size: 26),
+            child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 26),
           ),
           const SizedBox(height: 14),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style:  TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 5),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style:  TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 13,
               height: 1.4,
             ),

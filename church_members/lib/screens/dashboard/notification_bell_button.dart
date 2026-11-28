@@ -87,7 +87,7 @@ class _NotificationBellButtonState extends State<NotificationBellButton> {
             decoration: BoxDecoration(
               color: hasUnread
                   ? AppColors.primary.withValues(alpha: 0.12)
-                  : AppColors.surfaceMuted,
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
               shape: BoxShape.circle,
               border: Border.all(
                 color: hasUnread
@@ -104,7 +104,7 @@ class _NotificationBellButtonState extends State<NotificationBellButton> {
                       ? Icons.notifications_rounded
                       : Icons.notifications_none_rounded,
                   size: 22,
-                  color: hasUnread ? AppColors.primary : AppColors.textPrimary,
+                  color: hasUnread ? AppColors.primary :Theme.of(context).colorScheme.onSurface,
                 ),
                 if (hasUnread)
                   Positioned(
@@ -123,7 +123,7 @@ class _NotificationBellButtonState extends State<NotificationBellButton> {
                         color: const Color(0xFFEF4444),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: AppColors.surface,
+                         color: Theme.of(context).colorScheme.surface,
                           width: 1.8,
                         ),
                         boxShadow: const [
