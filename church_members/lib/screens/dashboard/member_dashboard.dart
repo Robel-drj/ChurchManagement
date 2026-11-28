@@ -653,14 +653,14 @@ class _EventStoryCard extends StatelessWidget {
         width: 235,
         padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFF8FAFF), Color(0xFFEEF2FF)],
-          ),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFDCE4FF)),
-        ),
+  color: colors.surface,
+  borderRadius: BorderRadius.circular(18),
+ border: Border.all(
+  color: colors.brightness == Brightness.dark
+      ? colors.outlineVariant
+      : const Color.fromARGB(255, 161, 168, 247),
+),
+),
         child: Row(
           children: [
             // Date Pill Badge
@@ -668,10 +668,9 @@ class _EventStoryCard extends StatelessWidget {
               width: 50,
               height: 64,
               decoration: BoxDecoration(
-  color: colors.surface,
-  borderRadius: BorderRadius.circular(18),
-  border: Border.all(color: colors.outlineVariant),
-),
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(13),
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -894,9 +893,26 @@ class _ProfileTab extends StatelessWidget {
                 ValueListenableBuilder<bool>(
   valueListenable: darkModeEnabled,
   builder: (context, enabled, child) {
+    final colors = Theme.of(context).colorScheme;
+
     return SwitchListTile(
-      secondary: const Icon(Icons.dark_mode_outlined),
-      title: const Text('Dark Mode'),
+      controlAffinity: ListTileControlAffinity.trailing,
+      secondary: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: colors.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          Icons.dark_mode_outlined,
+          color: colors.primary,
+          size: 20,
+        ),
+      ),
+      title: const Text(
+        'Dark Mode',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
       value: enabled,
       onChanged: setDarkMode,
     );
@@ -928,6 +944,10 @@ class _ProfileTab extends StatelessWidget {
                           Navigator.of(sheetContext).pop();
                           changePhoto();
                         },
+                ),
+                 const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Divider(),
                 ),
                 ListTile(
                   leading: Container(
